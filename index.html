@@ -10,7 +10,19 @@
   <link rel="manifest" href="manifest.json">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 85px; }
+    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 95px; }
+    
+    /* Offline szinkronizációs sáv felül */
+    #offline-banner {
+      display: none; background: #d35400; color: white; padding: 10px 14px;
+      border-radius: 8px; margin-bottom: 12px; font-size: 0.88rem; font-weight: bold;
+      justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    #btn-sync-offline {
+      background: #fff; color: #d35400; border: none; padding: 5px 10px;
+      border-radius: 5px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
+    }
+
     .card { background: #2b2b2b; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
     label { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: block; color: #bbb; }
     input { width: 100%; background: #3a3a3a; color: #fff; border: 1px solid #555; border-radius: 5px; padding: 8px; font-size: 0.95rem; margin-bottom: 8px; outline: none; }
@@ -29,11 +41,21 @@
     .qty-item.total input { background: #223; color: #5dade2; font-weight: bold; }
 
     .btn-add { background: #1f6aa5; color: white; border: none; border-radius: 6px; padding: 10px; width: 100%; font-size: 0.95rem; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
-    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; }
-    .btn-save { width: 100%; background: #28a745; color: white; border: none; border-radius: 6px; padding: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    
+    /* Alsó rögzített gombok */
+    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; display: flex; gap: 8px; }
+    .btn-action { flex: 1; border: none; border-radius: 6px; padding: 12px 6px; font-size: 0.88rem; font-weight: bold; cursor: pointer; text-align: center; }
+    .btn-excel { background: #007acc; color: white; }
+    .btn-save { background: #28a745; color: white; }
   </style>
 </head>
 <body>
+
+  <!-- OFFLINE VÁRÓLISTA JELZŐ -->
+  <div id="offline-banner">
+    <span id="offline-text">📦 0 offline mentés várakozik</span>
+    <button id="btn-sync-offline" type="button" onclick="szinkronizalOfflineAdatok()">📤 Feltöltés most</button>
+  </div>
 
   <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madármegfigyelés</h3>
 
@@ -66,13 +88,15 @@
   <!-- FAJOK LISTÁJA -->
   <div id="fajok-lista"></div>
 
-  <!-- MENTÉS SÁV -->
+  <!-- RÖGZÍTETT MENTÉS ÉS LETÖLTÉS SÁV -->
   <div class="footer-bar">
-    <button type="button" class="btn-save" onclick="mentes()">☁️ Mentés Táblázatba</button>
+    <button type="button" class="btn-action btn-excel" onclick="letoltesExcelbe()">📥 Excel (CSV)</button>
+    <button type="button" class="btn-action btn-save" onclick="mentesInditasa()">💾 Mentés (Felhő / Offline)</button>
   </div>
 
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
+    const STORAGE_KEY = "madar_offline_sorok";
 
     const FAJOK_LISTA = [
       "Álarcos réce", "Alka", "Amerikai pettyeslile", "Amuri vércse", "Apácahantmadár", "Apácalúd",
@@ -173,7 +197,19 @@
 
       addMegfigyelo();
       addFaj();
+      frissitBanner();
     };
+
+    function frissitBanner() {
+      const offlineSorok = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      const banner = document.getElementById("offline-banner");
+      if (offlineSorok.length > 0) {
+        document.getElementById("offline-text").innerText = `📦 ${offlineSorok.length} offline faj várakozik`;
+        banner.style.display = "flex";
+      } else {
+        banner.style.display = "none";
+      }
+    }
 
     function addMegfigyelo() {
       megfSzamlalo++;
@@ -251,7 +287,7 @@
       return v !== "" && !isNaN(v) ? parseInt(v, 10) : null;
     }
 
-    function mentes() {
+    function getOsszesitettAdatok() {
       const idopont = document.getElementById("idopont").value.trim();
       const terulet = document.getElementById("terulet").value.trim();
       const korzet = document.getElementById("korzet").value.trim();
@@ -259,7 +295,7 @@
 
       if (!idopont || !terulet || !megf1) {
         alert("Időpont, Terület és Megfigyelő 1 megadása kötelező!");
-        return;
+        return null;
       }
 
       const raw = [];
@@ -269,7 +305,7 @@
         let faj = b.querySelector('.faj-nev').value.trim();
         if (!faj) {
           alert("Minden sornál ki kell választani a fajt!");
-          return;
+          return null;
         }
 
         let pld = parseVal(b.querySelector('.q-pld').value);
@@ -282,7 +318,7 @@
 
         if ([pld, him, tojo, ad, juv, imm, pull].every(x => x === null)) {
           alert(`A(z) ${faj} fajnál legalább egy darabszámot be kell írni!`);
-          return;
+          return null;
         }
 
         let megj = b.querySelector('.faj-megj').value.trim();
@@ -339,10 +375,25 @@
         mentendoSorok.push(rekord);
       });
 
+      return mentendoSorok;
+    }
+
+    // FŐ MENTÉS: Online esetén felküldi, offline esetén tárolja
+    function mentesInditasa() {
+      const mentendoSorok = getOsszesitettAdatok();
+      if (!mentendoSorok) return;
+
+      // Ha nincs internetkapcsolat
+      if (!navigator.onLine) {
+        offlineTarol(mentendoSorok);
+        return;
+      }
+
       const btn = document.querySelector('.btn-save');
-      btn.innerText = "Mentés folyamatban...";
+      btn.innerText = "Küldés...";
       btn.disabled = true;
 
+      // Megpróbáljuk felküldeni a felhőbe
       fetch(FELHO_API_URL, {
         method: "POST",
         mode: "no-cors",
@@ -350,16 +401,91 @@
         body: JSON.stringify({ uj_megfigyelesek: mentendoSorok })
       })
       .then(() => {
-        btn.innerText = "☁️ Mentés Táblázatba";
+        btn.innerText = "💾 Mentés (Felhő / Offline)";
         btn.disabled = false;
-        alert(`✅ Siker! ${mentendoSorok.length} faj sikeresen továbbítva a központi Google Táblázatba!`);
+        alert(`✅ Siker! ${mentendoSorok.length} faj közvetlenül felment a Google Táblázatba!`);
         location.reload();
       })
-      .catch(err => {
-        btn.innerText = "☁️ Mentés Táblázatba";
+      .catch(() => {
+        btn.innerText = "💾 Mentés (Felhő / Offline)";
         btn.disabled = false;
-        alert("Hiba a küldéskor: " + err);
+        // Ha nem sikerült a hálózat miatt, elmentjük a telefonra
+        offlineTarol(mentendoSorok);
       });
+    }
+
+    function offlineTarol(sorok) {
+      let tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      tarolt = tarolt.concat(sorok);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tarolt));
+
+      alert(`📶 Nincs internetkapcsolat!\n\n${sorok.length} faj sikeresen elmentve a telefon belső memóriájába.\nAmint lesz térerőd, a felső narancssárga sávval egy kattintással feltöltheted!`);
+      location.reload();
+    }
+
+    // OFFLINE ADATOK TÖMEGES FELTÖLTÉSE
+    function szinkronizalOfflineAdatok() {
+      const tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (tarolt.length === 0) return;
+
+      if (!navigator.onLine) {
+        alert("Még mindig nincs elérhető internetkapcsolat a feltöltéshez!");
+        return;
+      }
+
+      const btn = document.getElementById("btn-sync-offline");
+      btn.innerText = "Feltöltés...";
+      btn.disabled = true;
+
+      fetch(FELHO_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uj_megfigyelesek: tarolt })
+      })
+      .then(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        alert(`🎉 Siker! Mind a ${tarolt.length} korábban elmentett offline megfigyelés feltöltve a Google Táblázatba!`);
+        location.reload();
+      })
+      .catch((err) => {
+        btn.innerText = "📤 Feltöltés most";
+        btn.disabled = false;
+        alert("Hiba a feltöltés során: " + err);
+      });
+    }
+
+    // CSV LETÖLTÉS GOMB
+    function letoltesExcelbe() {
+      const mentendoSorok = getOsszesitettAdatok();
+      if (!mentendoSorok || mentendoSorok.length === 0) return;
+
+      const headers = Object.keys(mentendoSorok[0]);
+      let csvContent = "\uFEFF";
+      csvContent += headers.join(";") + "\r\n";
+
+      mentendoSorok.forEach(row => {
+        const line = headers.map(header => {
+          let val = row[header];
+          if (val === null || val === undefined) return "";
+          val = String(val).replace(/"/g, '""');
+          return `"${val}"`;
+        }).join(";");
+        csvContent += line + "\r\n";
+      });
+
+      const datum = document.getElementById("idopont").value.replace(/\./g, "-");
+      const terulet = document.getElementById("terulet").value.replace(/\s+/g, "_");
+      const fajlnev = `madarmegfigyeles_${datum}_${terulet}.csv`;
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", fajlnev);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 
