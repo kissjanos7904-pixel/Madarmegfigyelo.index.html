@@ -2,466 +2,399 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
+  <title>Madármegfigyelés</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Madár Adatrögzítő</title>
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e293b">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #2563eb;
-      --success: #16a34a;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 90px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .header h1 { font-size: 1.2rem; font-weight: 700; }
-    .btn-help-top { background: var(--border); color: var(--text); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 85px; }
+    .card { background: #2b2b2b; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    label { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: block; color: #bbb; }
+    input { width: 100%; background: #3a3a3a; color: #fff; border: 1px solid #555; border-radius: 5px; padding: 8px; font-size: 0.95rem; margin-bottom: 8px; outline: none; }
+    input:focus { border-color: #1f6aa5; }
+    .row { display: flex; gap: 8px; }
+    .col { flex: 1; }
     
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-    .label-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; }
-    .btn-q { background: #475569; color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 0.75rem; margin-left: 6px; cursor: pointer; }
+    .faj-box { background: #333; border: 1px solid #555; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+    .faj-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .btn-del { background: #a93226; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
     
-    input, textarea {
-      width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px;
-      color: var(--text); font-size: 0.95rem; outline: none; margin-bottom: 8px;
-    }
-    input:focus, textarea:focus { border-color: var(--primary); }
-    .uppercase { text-transform: uppercase; }
-    
-    /* Fajválasztó lenyíló lista */
-    .faj-wrapper { position: relative; width: 100%; }
-    .faj-dropdown {
-      position: absolute; top: 100%; left: 0; right: 0; background: #1e293b;
-      border: 1px solid var(--primary); border-radius: 6px; max-height: 220px;
-      overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-    .faj-item {
-      padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.95rem; cursor: pointer;
-    }
-    .faj-item:active { background: var(--primary); }
+    .qty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .qty-item { text-align: center; }
+    .qty-item span { font-size: 0.7rem; color: #aaa; }
+    .qty-item input { text-align: center; padding: 6px 2px; margin-bottom: 0; font-size: 0.95rem; }
+    .qty-item.total input { background: #223; color: #5dade2; font-weight: bold; }
 
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid-num { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .num-col { display: flex; flex-direction: column; align-items: center; }
-    .num-col label { font-size: 0.75rem; margin-bottom: 2px; color: var(--text-muted); }
-    .num-col input { text-align: center; margin-bottom: 0; padding: 8px 4px; }
-    
-    .obs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .btn-small { background: var(--border); border: none; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
-    
-    .bottom-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
-      padding: 10px 14px; display: flex; gap: 8px; z-index: 100;
-    }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.95rem; cursor: pointer; color: white; text-align: center; }
-    .btn-save { background: var(--primary); }
-    .btn-sync { background: var(--success); }
-    .btn-export { background: var(--border); font-size: 0.8rem; padding: 8px; }
-    
-    .status-badge { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .btn-add { background: #1f6aa5; color: white; border: none; border-radius: 6px; padding: 10px; width: 100%; font-size: 0.95rem; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
+    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; }
+    .btn-save { width: 100%; background: #28a745; color: white; border: none; border-radius: 6px; padding: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>Madár Adatrögzítő</h1>
-    <button class="btn-help-top" onclick="alertFullHelp()">📖 Útmutató</button>
-  </div>
+  <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madármegfigyelés</h3>
 
+  <!-- KÖZÖS ADATOK -->
   <div class="card">
-    <div class="label-row">
-      <span>Időpont (ÉÉÉÉ.HH.NN) *</span>
-      <button class="btn-q" onclick="alertHelp('Időpont')">?</button>
-    </div>
-    <input type="text" id="entryDate" placeholder="pl. 2026.09.14">
+    <label>Időpont (ÉÉÉÉ.HH.NN) *</label>
+    <input type="text" id="idopont" required>
 
-    <div class="grid-2">
-      <div>
-        <div class="label-row">
-          <span>Terület *</span>
-          <button class="btn-q" onclick="alertHelp('Terület')">?</button>
-        </div>
-        <input type="text" id="entryTerulet" class="uppercase" list="teruletList" placeholder="KÖZSÉG / UTM">
-        <datalist id="teruletList"></datalist>
+    <div class="row">
+      <div class="col">
+        <label>Terület *</label>
+        <input type="text" id="terulet" oninput="this.value = this.value.toUpperCase()" placeholder="UTM / NÉV..." required>
       </div>
-      <div>
-        <div class="label-row">
-          <span>Körzet</span>
-          <button class="btn-q" onclick="alertHelp('Körzet')">?</button>
-        </div>
-        <input type="text" id="entryKorzet" class="uppercase" placeholder="PL. HALASTÓ">
+      <div class="col">
+        <label>Körzet</label>
+        <input type="text" id="korzet" oninput="this.value = this.value.toUpperCase()" placeholder="PL. HALASTÓ...">
       </div>
     </div>
 
-    <div class="label-row">
-      <span>Faj kiválasztása *</span>
-      <button class="btn-q" onclick="alertHelp('Faj')">?</button>
-    </div>
-    <div class="faj-wrapper">
-      <input type="text" id="entryFaj" placeholder="Koppints és gépelj a kereséshez..." autocomplete="off" oninput="filterFajok()" onfocus="filterFajok()">
-      <div id="fajDropdown" class="faj-dropdown"></div>
-    </div>
+    <label>Megfigyelő 1 *</label>
+    <input type="text" id="megf1" oninput="this.value = this.value.toUpperCase()" placeholder="ELSŐDLEGES MEGFIGYELŐ..." required>
 
-    <div class="label-row" style="margin-top: 6px;">
-      <span>Mennyiségek (min. 1 kötelező) *</span>
-      <button class="btn-q" onclick="alertHelp('Mennyiségek')">?</button>
-    </div>
-    <div class="grid-num" style="margin-bottom: 6px;">
-      <div class="num-col"><label>pld.</label><input type="number" id="num_pld" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Hím</label><input type="number" id="num_him" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Tojó</label><input type="number" id="num_tojo" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Ad</label><input type="number" id="num_ad" min="0" oninput="calcSum()"></div>
-    </div>
-    <div class="grid-num">
-      <div class="num-col"><label>Juv</label><input type="number" id="num_juv" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Imm</label><input type="number" id="num_imm" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Pull</label><input type="number" id="num_pull" min="0" oninput="calcSum()"></div>
-      <div class="num-col"><label>Össz</label><input type="number" id="num_ossz" readonly style="background:#1e293b; border-color:#475569;"></div>
-    </div>
+    <div id="extra-megf"></div>
+    <button type="button" onclick="addMegfigyelo()" style="background:none; border:1px dashed #777; color:#ccc; width:100%; padding:6px; border-radius:4px; font-size:0.8rem; margin-top:2px;">+ További megfigyelő</button>
   </div>
 
-  <div class="card">
-    <div class="obs-header">
-      <div class="label-row" style="margin: 0;">
-        <span>Megfigyelők *</span>
-        <button class="btn-q" onclick="alertHelp('Megfigyelők')">?</button>
-      </div>
-      <button class="btn-small" onclick="addObserverField()">+ Megfigyelő</button>
-    </div>
-    <div id="observerContainer">
-      <input type="text" class="obs-input uppercase" list="obsList" placeholder="MEGFIGYELŐ 1 * (ELSŐDLEGES)">
-      <input type="text" class="obs-input uppercase" list="obsList" placeholder="MEGFIGYELŐ 2">
-    </div>
-    <datalist id="obsList"></datalist>
+  <!-- FAJ GOMB -->
+  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Felülre nyílik)</button>
 
-    <div class="label-row" style="margin-top: 8px;">
-      <span>Megjegyzés</span>
-      <button class="btn-q" onclick="alertHelp('Megjegyzés')">?</button>
-    </div>
-    <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..."></textarea>
-  </div>
+  <!-- FAJOK LISTÁJA -->
+  <div id="fajok-lista"></div>
 
-  <div class="card" style="text-align: center;">
-    <button class="btn btn-export" onclick="exportToExcel()">📥 Mentett adatok letöltése Excelként (.xlsx)</button>
-    <div class="status-badge" id="localStatus">Helyben mentett: 0 sor (Feltöltendő: 0)</div>
-  </div>
-
-  <div class="bottom-bar">
-    <button class="btn btn-save" onclick="saveRecord()">💾 Mentés</button>
-    <button class="btn btn-sync" onclick="syncCloud()">☁️ Feltöltés</button>
+  <!-- MENTÉS SÁV -->
+  <div class="footer-bar">
+    <button type="button" class="btn-save" onclick="mentes()">☁️ Mentés Táblázatba</button>
   </div>
 
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
 
-    const SUGO = {
-      "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
-      "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
-      "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
-      "Faj": "A megfigyelt faj magyar neve a felugró listából. Kitöltése kötelező!",
-      "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
-      "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
-      "Megjegyzés": "Egyéb megjegyzések rögzítése."
-    };
-
-    const FAJOK = [
-      "Álarcos réce", "Alka", "Amerikai pettyeslile", "Amuri vércse", "Apácahantmadár", "Apácalúd", "Apró partfutó", "Aranylile", "Ázsiai pettyeslile", "Baird partfutó", "Bajszos poszáta", "Bajszos sármány", "Bakcsó", "Balkáni fakopáncs", "Balkáni gerle", "Barátcinege", "Barátkeselyű", "Barátposzáta", "Barátréce", "Barázdabillegető", "Barkóscinege", "Barna füzike", "Barna kánya", "Barna rétihéja", "Barnahasú pusztaityúk", "Batla", "Békászó sas", "Berki poszáta", "Berki tücsökmadár", "Berki veréb", "Bíbic", "Billegetőcankó", "Bonaparte-partfutó", "Bonaparte-sirály", "Bonelli-füzike", "Borzas gödény", "Böjti réce", "Bölömbika", "Búbos cinege", "Búbos vöcsök", "Búbosbanka", "Búbos pacsirta", "Búbos réce", "Bütykös ásólúd", "Bütykös hattyú", "Cankópartfutó", "Cifra pehelyréce", "Cigánycsuk", "Cigányréce", "Citrombillegető", "Citromsármány", "Császármadár", "Cserregő nádiposzáta", "Csicsörke", "Csigaforgató", "Csíkosfejű nádiposzáta", "Csilpcsalpfüzike", "Csíz", "Csóka", "Csonttollú", "Csörgő réce", "Csuszka", "Csüllő", "Dankasirály", "Darázsölyv", "Daru", "Déli geze", "Déli hantmadár", "Dolmányos sirály", "Dolmányos varjú", "Dögkeselyű", "Egerészölyv", "Ékfarkú halfarkas", "Ékfarkú lile", "Eleonóra-sólyom", "Énekes hattyú", "Énekes nádiposzáta", "Énekes rigó", "Erdei cankó", "Erdei fülesbagoly", "Erdei pacsirta", "Erdei pinty", "Erdei pityer", "Erdei sármány", "Erdei szalonka", "Erdei szürkebegy", "Északi búvár", "Ezüstlile", "Ezüstsirály", "Fácán", "Fakó keselyű", "Fakó rétihéja", "Fattyúszerkő", "Fecskesirály", "Fehér gólya", "Fehércsőrű búvár", "Fehérfarkú lilebíbic", "Fehérhátú fakopáncs", "Fehérkarmú vércse", "Fehérszárnyú szerkő", "Fekete gólya", "Fekete harkály", "Fekete réce", "Fekete rigó", "Fekete sas", "Feketenyakú vöcsök", "Feketeszárnyú székicsér", "Feketetorkú rigó", "Feketetorkú szürkebegy", "Fenyérfutó", "Fenyőpinty", "Fenyőrigó", "Fenyősármány", "Fenyőszajkó", "Fenyvescinege", "Fitiszfüzike", "Fogoly", "Foltos nádiposzáta", "Függőcinege", "Fülemüle", "Fülemülesitke", "Füles vöcsök", "Füleskuvik", "Fürj", "Füsti fecske", "Füstös cankó", "Füstös réce", "Fütyülő réce", "Gatyás ölyv", "Gatyáskuvik", "Gólyatöcs", "Gulipán", "Guvat", "Gyöngybagoly", "Gyurgyalag", "Gyűrűscsőrű sirály", "Hajnalmadár", "Halászsas", "Halászsirály", "Halcsontfarkú réce", "Halvány geze", "Halvány sarlósfecske", "Hamvas küllő", "Hamvas rétihéja", "Hantmadár", "Haris", "Havasi csóka", "Havasi fülespacsirta", "Havasi lile", "Havasi partfutó", "Havasi pityer", "Havasi sarlósfecske", "Havasi szürkebegy", "Havasi varjú", "Havasipinty", "Házi rozsdafarkú", "Házi veréb", "Hegyesfarkú partfutó", "Hegyi billegető", "Hegyi fakusz", "Hegyi réce", "Héja", "Héjasas", "Heringsirály", "Himalájai füzike", "Hóbagoly", "Holló", "Hósármány", "Hosszúcsőrű cankógoda", "Hosszúfarkú cankó", "Indiai lúd", "Jeges búvár", "Jeges sirály", "Jegesréce", "Jégmadár", "Kabasólyom", "Kacagócsér", "Kakukk", "Kalandrapacsirta", "Kanadai lúd", "Kanalasgém", "Karmazsinpirók", "Kárókatona", "Karvaly", "Karvalybagoly", "Karvalyposzáta", "Kék cinege", "Szürkefejű kékfú", "Kék galamb", "Kék kövirigó", "Kék vércse", "Kékbegy", "Kékcsőrű réce", "Kékes rétihéja", "Kékfarkú", "Kékszárnyú réce", "Keleti gerle", "Kenderike", "Kendermagos réce", "Kenti csér", "Kerceréce", "Kerecsensólyom", "Keresztcsőrű", "Kerti geze", "Kerti poszáta", "Kerti rozsdafarkú", "Kerti sármány", "Kígyászölyv", "Kínai üstökösgém", "Királyfüzike", "Kis bukó", "Kis csér", "Kis fakopáncs", "Kis geze", "Kis goda", "Kis hattyú", "Kis héja", "Kis kárókatona", "Kis kócsag", "Kis légykapó", "Kis lile", "Kis lilik", "Kis őrgébics", "Kis partfutó", "Kis póling", "Kis poszáta", "Kis sárszalonka", "Kis sirály", "Kis sólyom", "Kis vízicsibe", "Kis vöcsök", "Kőforgató", "Kontyos réce", "Korallsirály", "Kormos légykapó", "Kormos szerkő", "Kormos varjú", "Kormosfejű cinege", "Kövirigó", "Közép fakopáncs", "Kucsmás poszáta", "Kucsmás sármány", "Kuhi", "Kuvik", "Küszvágó csér", "Laposcsőrű víztaposó", "Lappantyú", "Lazúrcinege", "Léprigó", "Lilebíbic", "Lócsér", "Lunda", "Macskabagoly", "Márványos réce", "Meggyvágó", "Mezei pacsirta", "Mezei poszáta", "Mezei veréb", "Molnárfecske", "Nádi sármány", "Nádi tücsökmadár", "Nádirigó", "Nagy bukó", "Nagy fakopáncs", "Nagy fülemüle", "Nagy goda", "Nagy halfarkas", "Nagy kócsag", "Nagy lilik", "Nagy őrgébics", "Nagy pirók", "Nagy póling", "Nagy sárszalonka", "Naumann-rigó", "Nílusi lúd", "Nyaktekercs", "Nyári lúd", "Nyílfarkú halfarkas", "Nyílfarkú réce", "Nyírfajd", "Ökörszem", "Örvös bukó", "Örvös galamb", "Örvös légykapó", "Örvös lúd", "Örvös réce", "Örvös rigó", "Őszapó", "Pajzsoscankó", "Parlagi galamb", "Parlagi pityer", "Parlagi sas", "Pártásdaru", "Parti lile", "Parti pityer", "Partifecske", "Pásztorgém", "Pásztormadár", "Pehelyréce", "Pettyes kakukk", "Pettyes vízicsibe", "Piroslábú cankó", "Prérisirály", "Pusztai hantmadár", "Pusztai ölyv", "Pusztai sas", "Réti cankó", "Réti fülesbagoly", "Réti pityer", "Réti tücsökmadár", "Rétisas", "Reznek", "Rövidcsőrű lúd", "Rövidkarmú fakusz", "Rózsás flamingó", "Rózsás gödény", "Rózsás pirók", "Rozsdás csuk", "Rozsdás nádiposzáta", "Rozsdástorkú pityer", "Sárga billegető", "Sárgacsőrű kenderike", "Sárgafejű királyka", "Sárgalábú cankó", "Sárgalábú sirály", "Sárgarigó", "Sárjáró", "Sarkantyús pityer", "Sarkantyús sármány", "Sarki búvár", "Sarki csér", "Sarki lúd", "Sarki partfutó", "Sarki sirály", "Sarlós partfutó", "Sarlósfecske", "Sárszalonka", "Seregély", "Siketfajd", "Sisegő füzike", "Sivatagi hantmadár", "Sivatagi lile", "Sordély", "Sövénysármány", "Steller-pehelyréce", "Süvöltő", "Szajkó", "Szalagos keresztcsőrű", "Szalakóta", "Szárcsa", "Szarka", "Széki lile", "Székicsér", "Szélesfarkú halfarkas", "Széncinege", "Szerecsensirály", "Szibériai szürkebegy", "Szikipacsirta", "Szirtifecske", "Szirti sas", "Szőlőrigó", "Sztyeppi lile", "Sztyeppi sirály", "Szuharbújó", "Szürke cankó", "Szürke gém", "Szürke légykapó", "Szürke zsezse", "Talpastyúk", "Tavi cankó", "Temminck-partfutó", "Terekcankó", "Töcspartfutó", "Tengelic", "Tengeri partfutó", "Tőkés réce", "Törpegém", "Törpekuvik", "Törpesármány", "Törpesas", "Törpevízicsibe", "Tövisszúró gébics", "Trombitás sivatagipinty", "Tundralúd", "Túzok", "Tüskés bíbic", "Tüzesfejű királyka", "Ugartyúk", "Uhu", "Uráli bagoly", "Üstökösgém", "Üstökösréce", "Vadgerle", "Vándorfüzike", "Vándorpartfutó", "Vándorsólyom", "Vastagcsőrű füzike", "Vékonycsőrű póling", "Vékonycsőrű sirály", "Vékonycsőrű víztaposó", "Vetési lúd", "Vetési varjú", "Viharsirály", "Vízirigó", "Vízityúk", "Vörhenyes fecske", "Vörhenyes sármány", "Vörös ásólúd", "Vörös gém", "Vörös kánya", "Vörös vércse", "Vörösbegy", "Vörösfejű gébics", "Vörösnyakú lúd", "Vörösnyakú vöcsök", "Wilson-víztaposó", "Zátonykócsag", "Zöld gyurgyalag", "Zöld küllő", "Zöldike", "Zöldszárnyú réce", "Zsezse", "Egyéb nem meghatározott"
+    const FAJOK_LISTA = [
+      "Afrikai marabu", "Álarcos réce", "Alka", "Amerikai pettyeslile", "Amerikai tőkeréce",
+      "Amuri vércse", "Apácahantmadár", "Apácalúd", "Apró partfutó", "Aranylile",
+      "Ázsiai pettyeslile", "Baird-partfutó", "Bajszos poszáta", "Bajszos sármány", "Bakcsó",
+      "Balkáni fakopáncs", "Balkáni füzike", "Balkáni gerle", "Balkáni poszáta", "Balkáni sirály",
+      "Barátcinege", "Barátkeselyű", "Barátposzáta", "Barátréce", "Barázdabillegető",
+      "Barkóscinege", "Barna füzike", "Barna kánya", "Barna rétihéja", "Barnahasú pusztaityúk",
+      "Bantu sarlósfecske", "Batla", "Békászó sas", "Berki poszáta", "Berki tücsökmadár",
+      "Berki veréb", "Bíbic", "Billegetőcankó", "Bonaparte-partfutó", "Bonaparte-sirály",
+      "Bonelli-füzike", "Borzas gödény", "Böjti réce", "Bölömbika", "Búbos cinege",
+      "Búbos pacsirta", "Búbos réce", "Búbos vöcsök", "Búbosbanka", "Bütykös ásólúd",
+      "Bütykös hattyú", "Cankópartfutó", "Cifra pehelyréce", "Cigánycsuk", "Cigányréce",
+      "Citrombillegető", "Citromsármány", "Császármadár", "Cserregő nádiposzáta", "Csicsörke",
+      "Csigaforgató", "Csíkosfejű nádiposzáta", "Csilpcsalpfüzike", "Csíz", "Csóka",
+      "Csonttollú", "Csörgő réce", "Csuszka", "Csüllő", "Dankasirály", "Darázsölyv",
+      "Daru", "Déli dérposzáta", "Déli geze", "Déli hantmadár", "Déli sarlósfecske",
+      "Dolmányos sirály", "Dolmányos varjú", "Dögkeselyű", "Egerészölyv", "Ékfarkú halfarkas",
+      "Ékfarkú lile", "Eleonóra-sólyom", "Énekes hattyú", "Énekes nádiposzáta", "Énekes rigó",
+      "Erdei cankó", "Erdei fülesbagoly", "Erdei pacsirta", "Erdei pinty", "Erdei pityer",
+      "Erdei sármány", "Erdei szalonka", "Erdei szürkebegy", "Északi búvár", "Északi csuszka",
+      "Északi füzike", "Északi sirály", "Északi sólyom", "Ezüstküllő", "Ezüstlile",
+      "Ezüstsirály", "Fácán", "Fakó füzike", "Fakó keselyű", "Fakó partfutó",
+      "Fakó rétihéja", "Fattyúszerkő", "Fehér gólya", "Fehércsőrű búvár", "Fehérfarkú lilebíbic",
+      "Fehérfejű hantmadár", "Fehérhátú fakopáncs", "Fehérkarmú vércse", "Fehérszárnyú szerkő",
+      "Fehérszemű réce", "Fehértorkú rigó", "Fekete fakopáncs", "Fekete gólya", "Fekete harkály",
+      "Fekete réce", "Fekete rigó", "Fekete sas", "Fekete sarlósfecske", "Fekete sirály",
+      "Feketenyakú vöcsök", "Feketeszárnyú székicsér", "Feketetorkú búvár", "Feketetorkú füzike",
+      "Feketetorkú rigó", "Feketetorkú szürkebegy", "Fenyérfutó", "Fenyőpinty", "Fenyőrigó",
+      "Fenyősármány", "Fenyőszajkó", "Fenyvescinege", "Fitiszfüzike", "Flavirostris", "Fogoly",
+      "Foltos nádiposzáta", "Foltos susztercankó", "Főnixkócsag", "Függőcinege", "Fülemüle",
+      "Fülemülesitke", "Füles vöcsök", "Füleskuvik", "Fürj", "Füsti fecske", "Füstös cankó",
+      "Füstös réce", "Fütyülő réce", "Galléros túzok", "Gatyás ölyv", "Gatyáskuvik",
+      "Gólyatöcs", "Golyvás daru", "Göndörtollú gödény", "Görbeujjú partfutó", "Gulipán",
+      "Guvat", "Gyöngybagoly", "Gyurgyalag", "Gyűrűscsőrű sirály", "Gyűrűs réce",
+      "Hajnalmadár", "Halászsas", "Halászsirály", "Halcsontfarkú réce", "Halvány geze",
+      "Halvány sarlósfecske", "Hamvas küllő", "Hamvas rétihéja", "Hantmadár", "Haris",
+      "Havasi csóka", "Havasi fülespacsirta", "Havasi lile", "Havasi partfutó", "Havasi pityer",
+      "Havasi sarlósfecske", "Havasi szürkebegy", "Havasi varjú", "Havasipinty", "Házi rozsdafarkú",
+      "Házi veréb", "Hegyesfarkú partfutó", "Hegyi billegető", "Hegyi fakusz", "Hegyi réce",
+      "Héja", "Héjasas", "Heringsirály", "Himalájai füzike", "Hóbagoly", "Holló",
+      "Hósármány", "Hosszúcsőrű cankógoda", "Hosszúfarkú csüllő", "Hosszúfarkú halfarkas",
+      "Hosszúfarkú karvaly", "Hosszúlábú ölyv", "Hosszúujjú partfutó", "Ibériai füzike",
+      "Indiai lúd", "Izlandi sirály", "Jakutszk partfutó", "Jeges búvár", "Jeges sirály",
+      "Jegesréce", "Jégmadár", "Kabasólyom", "Kacagócsér", "Kakukk", "Kalandrapacsirta",
+      "Kanadai daru", "Kanadai lúd", "Kanalasgém", "Kanalas réce", "Karmazsinpirók",
+      "Kárókatona", "Karvaly", "Karvalybagoly", "Karvalyposzáta", "Kaspi lile", "Kék cinege",
+      "Kék fakusz", "Kék galamb", "Kék kövirigó", "Kék vércse", "Kékbegy", "Kékcsőrű réce",
+      "Kékes rétihéja", "Kékfarkú", "Kékfülű mézevő", "Kékszárnyú lúd", "Kékszárnyú réce",
+      "Keleti gerle", "Keleti kékbegy", "Keleti olajfűzike", "Keleti sárgabillegető", "Kelepce",
+      "Kenderike", "Kendermagos réce", "Kenti csér", "Kerceréce", "Kerecsensólyom",
+      "Keresztcsőrű", "Kerti geze", "Kerti poszáta", "Kerti rozsdafarkú", "Kerti sármány",
+      "Kígyászölyv", "Kínai üstökösgém", "Királycsér", "Királyfüzike", "Kis bukó",
+      "Kis csér", "Kis fakopáncs", "Kis feketefejű sirály", "Kis geze", "Kis goda",
+      "Kis hattyú", "Kis héja", "Kis kárókatona", "Kis kócsag", "Kis légykapó",
+      "Kis lile", "Kis lilik", "Kis marabu", "Kis őrgébics", "Kis partfutó", "Kis póling",
+      "Kis poszáta", "Kis sárszalonka", "Kis sirály", "Kis sólyom", "Kis vízicsibe",
+      "Kis vöcsök", "Kőforgató", "Kolibriposzáta", "Kontyos réce", "Korallsirály",
+      "Koronás daru", "Kormos hantmadár", "Kormos légykapó", "Kormos szerkő", "Kormos varjú",
+      "Kormosfejű cinege", "Kövirigó", "Közép fakopáncs", "Kucsmás poszáta", "Kucsmás sármány",
+      "Kuhi", "Kuvik", "Kuvikbagoly", "Küszvágó csér", "Laposcsőrű víztaposó", "Lappantyú",
+      "Lazúrcinege", "Léprigó", "Lilebíbic", "Lócsér", "Lunda", "Macskabagoly", "Magellán-lúd",
+      "Márványos réce", "Meggyvágó", "Mezei pacsirta", "Mezei poszáta", "Mezei veréb",
+      "Mocsári cinege", "Mocsári füzike", "Mocsári poszáta", "Mocsári réce", "Mocsári szalonka",
+      "Molnárfecske", "Nádi sármány", "Nádi tücsökmadár", "Nádirigó", "Nagy bukó",
+      "Nagy fakopáncs", "Nagy fülemüle", "Nagy goda", "Nagy halfarkas", "Nagy kárókatona",
+      "Nagy kócsag", "Nagy lilik", "Nagy őrgébics", "Nagy partfutó", "Nagy pirók",
+      "Nagy póling", "Nagy sárszalonka", "Naumann-rigó", "Német sirály", "Nílusi lúd",
+      "Nyaktekercs", "Nyári lúd", "Nyílfarkú halfarkas", "Nyílfarkú réce", "Nyírfajd",
+      "Nyugati díszesposzáta", "Nyugati fülemüle", "Nyugati hantmadár", "Nyugati kékbegy",
+      "Nyugati sárgabillegető", "Nyugati szikipacsirta", "Olasznád-poszáta", "Ökörszem",
+      "Örvös bukó", "Örvös galamb", "Örvös légykapó", "Örvös lúd", "Örvös réce",
+      "Örvös rigó", "Őszapó", "Pajzsoscankó", "Pápaszemes réce", "Parlagi galamb",
+      "Parlagi pityer", "Parlagi sas", "Pártásdaru", "Parti lile", "Parti pityer",
+      "Partifecske", "Pásztorgém", "Pásztormadár", "Pehelyréce", "Pézsmaréce",
+      "Pettyes fülesbagoly", "Pettyes kakukk", "Pettyes vízicsibe", "Piroslábú cankó",
+      "Piroslábú sólyom", "Piroscsőrű réce", "Prérifutó", "Prérisirály", "Pusztai hantmadár",
+      "Pusztai ölyv", "Pusztai sas", "Pusztai szajkó", "Réti cankó", "Réti fülesbagoly",
+      "Réti pityer", "Réti tücsökmadár", "Rétisas", "Reznek", "Rózsás flamingó",
+      "Rózsás gödény", "Rózsás márványosréce", "Rózsás partfutó", "Rózsás pirók",
+      "Rózsás sirály", "Rozsdás csuk", "Rozsdás nádiposzáta", "Rozsdás réce", "Rozsdástorkú pityer",
+      "Rövidcsőrű lúd", "Rövidkarmú fakusz", "Sárga billegető", "Sárgabillegető",
+      "Sárgacsőrű búvár", "Sárgacsőrű kenderike", "Sárgafejű királyka", "Sárgafejű pacsirta",
+      "Sárgalábú cankó", "Sárgalábú sirály", "Sárgamellű poszáta", "Sárgarigó", "Sárjáró",
+      "Sarkantyús pityer", "Sarkantyús sármány", "Sarki búvár", "Sarki csér", "Sarki halfarkas",
+      "Sarki lúd", "Sarki partfutó", "Sarki sirály", "Sarlós partfutó", "Sarlósfecske",
+      "Sárszalonka", "Seregély", "Siketfajd", "Sisegő füzike", "Sivatagi hantmadár",
+      "Sivatagi lile", "Sivatagi poszáta", "Sivatagi sármány", "Sivatagi sólyom", "Solymászkánya",
+      "Sordély", "Sötét füzike", "Sötét sirály", "Sövénysármány", "Spanyol veréb",
+      "Steller-pehelyréce", "Suhogó réce", "Sünbagoly", "Süvöltő", "Szajkó",
+      "Szalagos keresztcsőrű", "Szalakóta", "Szárcsa", "Szarka", "Széki lile", "Székicsér",
+      "Szélescsőrű víztaposó", "Szélesfarkú halfarkas", "Széncinege", "Szerecsensirály",
+      "Szibériai füzike", "Szibériai hantmadár", "Szibériai sármány", "Szibériai szürkebegy",
+      "Szibériai tarka rigó", "Szibériai viharmadár", "Szikipacsirta", "Szirtifecske",
+      "Szirti sas", "Szőlőrigó", "Sztyeppi lile", "Sztyeppi sirály", "Szuharbújó",
+      "Szürke cankó", "Szürke gém", "Szürke hantmadár", "Szürke küllő", "Szürke légykapó",
+      "Szürke zsezse", "Szürkebegy", "Szürkefejű füzike", "Szürkefejű halászsas",
+      "Szürkefejű kékfú", "Szürkefejű sármány", "Szürkepartfutó", "Tarka réce", "Tavi cankó",
+      "Tavi sirály", "Temminck-partfutó", "Tengeri partfutó", "Tengeri sas", "Terekcankó",
+      "Töcspartfutó", "Tengelic", "Törpegém", "Törpekuvik", "Törpesármány", "Törpesas",
+      "Törpevízicsibe", "Tövisszúró gébics", "Trombita hattyú", "Trombitás sivatagipinty",
+      "Tőkés réce", "Tundralúd", "Tundrasirály", "Túzok", "Tüskés bíbic", "Tüzesfejű királyka",
+      "Ugartyúk", "Uhu", "Uráli bagoly", "Üstökösgém", "Üstökösréce", "Vadgerle",
+      "Vadpulyka", "Vagabond lile", "Vajszínű futó", "Vándorfecske", "Vándorfüzike",
+      "Vándorpartfutó", "Vándorsólyom", "Vastagcsőrű füzike", "Vastagcsőrű lunda",
+      "Vékonycsőrű lile", "Vékonycsőrű póling", "Vékonycsőrű sirály", "Vékonycsőrű víztaposó",
+      "Vetési lúd", "Vetési varjú", "Viharfecske", "Viharkajla", "Viharsirály", "Világos partfutó",
+      "Vízirigó", "Vízityúk", "Vörhenyes fecske", "Vörhenyes sármány", "Vörös ásólúd",
+      "Vörös fejű pacsirta", "Vörös füzike", "Vörös gém", "Vörös kánya", "Vörös vércse",
+      "Vörösbegy", "Vörösfarkú gébics", "Vörösfarkú hantmadár", "Vörösfejű gébics",
+      "Vörösnyakú búvár", "Vörösnyakú lúd", "Vörösnyakú vöcsök", "Vörösszárnyú pityer",
+      "Vörösszemű récike", "Vöröstorkú búvár", "Vöröstorkú pityer", "Vöröstorkú rigó",
+      "Wilson-partfutó", "Wilson-víztaposó", "Zátonykócsag", "Zöld füzike", "Zöld gyurgyalag",
+      "Zöld küllő", "Zöldike", "Zöldszárnyú réce", "Zsezse", "Egyéb nem meghatározott"
     ];
 
-    // Fajválasztó szűrőlogika
-    function filterFajok() {
-      const input = document.getElementById('entryFaj');
-      const val = input.value.toLowerCase().trim();
-      const dd = document.getElementById('fajDropdown');
-      dd.innerHTML = '';
+    let fajSzamlalo = 0;
+    let megfSzamlalo = 1;
 
-      const talalatok = val === '' ? FAJOK.slice(0, 15) : FAJOK.filter(f => f.toLowerCase().includes(val)).slice(0, 15);
+    window.onload = function() {
+      const ma = new Date();
+      const ev = ma.getFullYear();
+      const ho = String(ma.getMonth() + 1).padStart(2, '0');
+      const nap = String(ma.getDate()).padStart(2, '0');
+      document.getElementById("idopont").value = `${ev}.${ho}.${nap}`;
 
-      if (talalatok.length === 0) {
-        dd.style.display = 'none';
-        return;
-      }
-
-      talalatok.forEach(faj => {
-        const item = document.createElement('div');
-        item.className = 'fajitem';
-        item.style.padding = '12px';
-        item.style.borderBottom = '1px solid #334155';
-        item.style.cursor = 'pointer';
-        item.innerText = faj;
-        item.onmousedown = () => selectFaj(faj);
-        item.ontouchstart = () => selectFaj(faj);
-        dd.appendChild(item);
-      });
-
-      dd.style.display = 'block';
-    }
-
-    function selectFaj(faj) {
-      document.getElementById('entryFaj').value = faj;
-      document.getElementById('fajDropdown').style.display = 'none';
-    }
-
-    // Bezárás külső kattintásra
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.faj-wrapper')) {
-        document.getElementById('fajDropdown').style.display = 'none';
-      }
-    });
-
-    // IndexedDB inicializálás
-    let db;
-    const request = indexedDB.open("MadarAppDB", 1);
-    request.onupgradeneeded = (e) => {
-      db = e.target.result;
-      db.createObjectStore("megfigyelesek", { keyPath: "id", autoIncrement: true });
-    };
-    request.onsuccess = (e) => {
-      db = e.target.result;
-      updateStatusBadge();
-      populateDatalists();
+      addMegfigyelo();
+      addFaj();
     };
 
-    function initForm() {
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth() + 1).padStart(2, '0');
-      const d = String(today.getDate()).padStart(2, '0');
-      document.getElementById('entryDate').value = `${y}.${m}.${d}`;
+    function addMegfigyelo() {
+      megfSzamlalo++;
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <label>Megfigyelő ${megfSzamlalo}</label>
+        <input type="text" class="megf-extra" oninput="this.value = this.value.toUpperCase()" placeholder="NÉV...">
+      `;
+      document.getElementById("extra-megf").appendChild(div);
     }
 
-    function addObserverField() {
-      const container = document.getElementById('observerContainer');
-      const count = container.querySelectorAll('input').length + 1;
-      const inp = document.createElement('input');
-      inp.type = "text";
-      inp.className = "obs-input uppercase";
-      inp.setAttribute("list", "obsList");
-      inp.placeholder = `MEGFIGYELŐ ${count}`;
-      container.appendChild(inp);
+    function addFaj() {
+      fajSzamlalo++;
+      const container = document.getElementById("fajok-lista");
+      const box = document.createElement("div");
+      box.className = "faj-box";
+      box.id = `faj-${fajSzamlalo}`;
+      box.dataset.index = fajSzamlalo;
+
+      box.innerHTML = `
+        <div class="faj-hdr">
+          <span style="font-weight:bold; color:#5dade2;">Faj #${fajSzamlalo}</span>
+          <button type="button" class="btn-del" onclick="delFaj(${fajSzamlalo})">✕ Törlés</button>
+        </div>
+
+        <input list="dl-fajok" class="faj-nev" placeholder="Kezdd el gépelni a faj nevét..." required>
+        <datalist id="dl-fajok">
+          ${FAJOK_LISTA.map(f => `<option value="${f}">`).join('')}
+        </datalist>
+
+        <div class="qty-grid">
+          <div class="qty-item"><span>pld.</span><input type="number" class="q-pld" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Hím</span><input type="number" class="q-him" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Tojó</span><input type="number" class="q-tojo" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Ad</span><input type="number" class="q-ad" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Juv</span><input type="number" class="q-juv" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Imm</span><input type="number" class="q-imm" min="0" oninput="sum(this)"></div>
+          <div class="qty-item"><span>Pull</span><input type="number" class="q-pull" min="0" oninput="sum(this)"></div>
+          <div class="qty-item total"><span>Össz</span><input type="number" class="q-ossz" readonly></div>
+        </div>
+
+        <input type="text" class="faj-megj" placeholder="Megjegyzés..." style="margin-top:6px; margin-bottom:0;">
+      `;
+
+      container.insertBefore(box, container.firstChild);
     }
 
-    function calcSum() {
-      const fields = ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull'];
-      let sum = 0;
-      let hasVal = false;
-      fields.forEach(id => {
-        const v = parseInt(document.getElementById(id).value, 10);
-        if (!isNaN(v)) {
-          sum += v;
-          hasVal = true;
-        }
-      });
-      document.getElementById('num_ossz').value = hasVal ? sum : '';
-    }
-
-    function parseVal(id) {
-      const v = parseInt(document.getElementById(id).value, 10);
-      return isNaN(v) ? "" : v;
-    }
-
-    function saveRecord() {
-      const datum = document.getElementById('entryDate').value.trim();
-      const terulet = document.getElementById('entryTerulet').value.trim().toUpperCase();
-      const korzet = document.getElementById('entryKorzet').value.trim().toUpperCase();
-      let faj = document.getElementById('entryFaj').value.trim();
-      
-      const obsInputs = document.querySelectorAll('.obs-input');
-      const megfigyelo1 = obsInputs[0].value.trim().toUpperCase();
-
-      if (!datum || !terulet || !faj || !megfigyelo1) {
-        alert("Az Időpont, Terület, Faj és Megfigyelő 1 kitöltése kötelező!");
-        return;
+    function delFaj(id) {
+      if (document.querySelectorAll('.faj-box').length > 1) {
+        document.getElementById(`faj-${id}`).remove();
+      } else {
+        alert("Legalább egy faj megadása kötelező!");
       }
+    }
 
-      const pld = parseVal('num_pld');
-      const him = parseVal('num_him');
-      const tojo = parseVal('num_tojo');
-      const ad = parseVal('num_ad');
-      const juv = parseVal('num_juv');
-      const imm = parseVal('num_imm');
-      const pull = parseVal('num_pull');
-      const ossz = parseVal('num_ossz');
+    function sum(el) {
+      const box = el.closest('.faj-box');
+      const fields = ['q-pld', 'q-him', 'q-tojo', 'q-ad', 'q-juv', 'q-imm', 'q-pull'];
+      let total = 0;
+      let has = false;
 
-      if (pld === "" && him === "" && tojo === "" && ad === "" && juv === "" && imm === "" && pull === "") {
-        alert("A mennyiségi rubrikák közül legalább egyet kötelező kitölteni!");
-        return;
-      }
-
-      if (faj === "Egyéb nem meghatározott") {
-        const egyeb = prompt("Kérlek add meg az egyéb faj nevét:");
-        faj = egyeb && egyeb.trim() ? "EGYÉB: " + egyeb.trim().toUpperCase() : "EGYÉB NEM MEGHATÁROZOTT";
-      }
-
-      const record = {
-        "Időpont": datum,
-        "Terület": terulet,
-        "Körzet": korzet,
-        "Faj": faj,
-        "pld.": pld,
-        "Hím": him,
-        "Tojó": tojo,
-        "Ad": ad,
-        "Juv": juv,
-        "Imm": imm,
-        "Pull": pull,
-        "Össz": ossz,
-        "Megfigyelő 1": megfigyelo1,
-        "Megjegyzés": document.getElementById('txtMegjegyzes').value.trim(),
-        "Feltoltve": false
-      };
-
-      obsInputs.forEach((inp, idx) => {
-        if (idx > 0) {
-          const val = inp.value.trim().toUpperCase();
-          if (val) record[`Megfigyelő ${idx + 1}`] = val;
+      fields.forEach(f => {
+        const val = box.querySelector(`.${f}`).value.trim();
+        if (val && !isNaN(val)) {
+          total += parseInt(val, 10);
+          has = true;
         }
       });
 
-      const tx = db.transaction("megfigyelesek", "readwrite");
-      tx.objectStore("megfigyelesek").add(record);
-      tx.oncomplete = () => {
-        alert("Adat elmentve a telefonon!");
-        clearForm();
-        updateStatusBadge();
-        populateDatalists();
-      };
+      box.querySelector('.q-ossz').value = has ? total : "";
     }
 
-    function clearForm() {
-      document.getElementById('entryFaj').value = '';
-      ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull', 'num_ossz'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
-      document.getElementById('txtMegjegyzes').value = '';
+    function parseVal(v) {
+      v = v.trim();
+      return v !== "" && !isNaN(v) ? parseInt(v, 10) : null;
     }
 
-    function updateStatusBadge() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const all = req.result;
-        const unsynced = all.filter(r => !r.Feltoltve).length;
-        document.getElementById('localStatus').innerText = `Helyben mentett: ${all.length} sor (Feltöltendő: ${unsynced})`;
-      };
-    }
+    function mentes() {
+      const idopont = document.getElementById("idopont").value.trim();
+      const terulet = document.getElementById("terulet").value.trim();
+      const korzet = document.getElementById("korzet").value.trim();
+      const megf1 = document.getElementById("megf1").value.trim();
 
-    function populateDatalists() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const all = req.result;
-        const teruletek = new Set();
-        const megfigyelok = new Set();
-
-        all.forEach(r => {
-          if (r["Terület"]) teruletek.add(r["Terület"]);
-          Object.keys(r).forEach(k => {
-            if (k.startsWith("Megfigyelő") && r[k]) megfigyelok.add(r[k]);
-          });
-        });
-
-        const dlTer = document.getElementById('teruletList');
-        dlTer.innerHTML = '';
-        teruletek.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          dlTer.appendChild(opt);
-        });
-
-        const dlObs = document.getElementById('obsList');
-        dlObs.innerHTML = '';
-        megfigyelok.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value = m;
-          dlObs.appendChild(opt);
-        });
-      };
-    }
-
-    async function syncCloud() {
-      if (!navigator.onLine) {
-        alert("Nincs internetkapcsolat!");
+      if (!idopont || !terulet || !megf1) {
+        alert("Időpont, Terület és Megfigyelő 1 megadása kötelező!");
         return;
       }
 
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
+      const raw = [];
+      const boxes = Array.from(document.querySelectorAll('.faj-box'));
 
-      req.onsuccess = async () => {
-        const unsynced = req.result.filter(r => !r.Feltoltve);
-        if (unsynced.length === 0) {
-          alert("Minden adat fel van töltve!");
+      for (let b of boxes) {
+        let faj = b.querySelector('.faj-nev').value.trim();
+        if (!faj) {
+          alert("Minden sornál ki kell választani a fajt!");
           return;
         }
 
-        try {
-          await fetch(FELHO_API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uj_megfigyelesek: unsynced })
-          });
+        let pld = parseVal(b.querySelector('.q-pld').value);
+        let him = parseVal(b.querySelector('.q-him').value);
+        let tojo = parseVal(b.querySelector('.q-tojo').value);
+        let ad = parseVal(b.querySelector('.q-ad').value);
+        let juv = parseVal(b.querySelector('.q-juv').value);
+        let imm = parseVal(b.querySelector('.q-imm').value);
+        let pull = parseVal(b.querySelector('.q-pull').value);
 
-          const writeTx = db.transaction("megfigyelesek", "readwrite");
-          const writeStore = writeTx.objectStore("megfigyelesek");
-          unsynced.forEach(rec => {
-            rec.Feltoltve = true;
-            writeStore.put(rec);
-          });
-
-          writeTx.oncomplete = () => {
-            alert(`${unsynced.length} rekord sikeresen elküldve a Google Táblázatba!`);
-            updateStatusBadge();
-          };
-        } catch (err) {
-          alert("Feltöltési hiba: " + err.message);
-        }
-      };
-    }
-
-    function exportToExcel() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const data = req.result;
-        if (data.length === 0) {
-          alert("Nincs mentett adat!");
+        if ([pld, him, tojo, ad, juv, imm, pull].every(x => x === null)) {
+          alert(`A(z) ${faj} fajnál legalább egy darabszámot be kell írni!`);
           return;
         }
-        const cleanData = data.map(item => {
-          const copy = Object.assign({}, item);
-          delete copy.id;
-          return copy;
+
+        let megj = b.querySelector('.faj-megj').value.trim();
+        raw.push({ faj, pld, him, tojo, ad, juv, imm, pull, megj, index: parseInt(b.dataset.index, 10) });
+      }
+
+      raw.sort((a, b) => a.index - b.index);
+      const osszesit = {};
+      const fajSorrend = [];
+
+      raw.forEach(r => {
+        if (!osszesit[r.faj]) {
+          fajSorrend.push(r.faj);
+          osszesit[r.faj] = { pld: null, him: null, tojo: null, ad: null, juv: null, imm: null, pull: null, megj: [] };
+        }
+        ['pld', 'him', 'tojo', 'ad', 'juv', 'imm', 'pull'].forEach(f => {
+          if (r[f] !== null) {
+            osszesit[r.faj][f] = (osszesit[r.faj][f] || 0) + r[f];
+          }
         });
+        if (r.megj && !osszesit[r.faj].megj.includes(r.megj)) {
+          osszesit[r.faj].megj.push(r.megj);
+        }
+      });
 
-        const ws = XLSX.utils.json_to_sheet(cleanData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Megfigyelesek");
-        XLSX.writeFile(wb, "madarmegfigyelesek_mobil.xlsx");
-      };
+      const megfAdatok = { "Megfigyelő 1": megf1 };
+      document.querySelectorAll('.megf-extra').forEach((inp, i) => {
+        const val = inp.value.trim();
+        megfAdatok[`Megfigyelő ${i + 2}`] = val ? val : "";
+      });
+
+      const mentendoSorok = [];
+      fajSorrend.forEach(faj => {
+        const o = osszesit[faj];
+        const reszek = [o.pld, o.him, o.tojo, o.ad, o.juv, o.imm, o.pull].filter(x => x !== null);
+        const ossz = reszek.length > 0 ? reszek.reduce((a, b) => a + b, 0) : null;
+
+        const rekord = {
+          "Időpont": idopont,
+          "Terület": terulet,
+          "Körzet": korzet,
+          "Faj": faj,
+          "pld.": o.pld,
+          "Hím": o.him,
+          "Tojó": o.tojo,
+          "Ad": o.ad,
+          "Juv": o.juv,
+          "Imm": o.imm,
+          "Pull": o.pull,
+          "Össz": ossz,
+          "Megjegyzés": o.megj.join("; ")
+        };
+        Object.assign(rekord, megfAdatok);
+        mentendoSorok.push(rekord);
+      });
+
+      const btn = document.querySelector('.btn-save');
+      btn.innerText = "Mentés folyamatban...";
+      btn.disabled = true;
+
+      fetch(FELHO_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uj_megfigyelesek: mentendoSorok })
+      })
+      .then(() => {
+        btn.innerText = "☁️ Mentés Táblázatba";
+        btn.disabled = false;
+        alert(`✅ Siker! ${mentendoSorok.length} faj sikeresen továbbítva a központi Google Táblázatba!`);
+        location.reload();
+      })
+      .catch(err => {
+        btn.innerText = "☁️ Mentés Táblázatba";
+        btn.disabled = false;
+        alert("Hiba a küldéskor: " + err);
+      });
     }
+  </script>
 
-    function alertHelp(key) { alert(SUGO[key] || "Nincs leírás."); }
-    function alertFullHelp() {
-      alert(Object.entries(SUGO).map(([k, v]) => `• ${k.toUpperCase()}:\n${v}`).join("\n\n"));
-    }
-
+  <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
-
-    initForm();
   </script>
 </body>
 </html>
