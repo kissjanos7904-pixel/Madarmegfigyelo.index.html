@@ -1,6 +1,6 @@
 {
   "name": "Madártani Adatrögzítő",
-  "short_name": "MadárApp",
+  "short_name": "Faunisztika",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1e1e1e",
