@@ -10,13 +10,12 @@
   <link rel="manifest" href="manifest.json">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 95px; }
+    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 110px; }
     
-    /* Offline szinkronizációs sáv felül */
     #offline-banner {
       display: none; background: #d35400; color: white; padding: 10px 14px;
       border-radius: 8px; margin-bottom: 12px; font-size: 0.88rem; font-weight: bold;
-      justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      justify-content: space-between; align-items: center;
     }
     #btn-sync-offline {
       background: #fff; color: #d35400; border: none; padding: 5px 10px;
@@ -42,19 +41,20 @@
 
     .btn-add { background: #1f6aa5; color: white; border: none; border-radius: 6px; padding: 10px; width: 100%; font-size: 0.95rem; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
     
-    /* Alsó rögzített gombok */
-    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; display: flex; gap: 8px; }
-    .btn-action { flex: 1; border: none; border-radius: 6px; padding: 12px 6px; font-size: 0.88rem; font-weight: bold; cursor: pointer; text-align: center; }
-    .btn-excel { background: #007acc; color: white; }
-    .btn-save { background: #28a745; color: white; }
+    /* Alsó fix gombok: 3 gomb egymás mellett */
+    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; display: flex; gap: 6px; }
+    .btn-action { flex: 1; border: none; border-radius: 6px; padding: 12px 2px; font-size: 0.8rem; font-weight: bold; cursor: pointer; text-align: center; }
+    .btn-csv { background: #007acc; color: white; }
+    .btn-offline { background: #e67e22; color: white; }
+    .btn-online { background: #28a745; color: white; }
   </style>
 </head>
 <body>
 
-  <!-- OFFLINE VÁRÓLISTA JELZŐ -->
+  <!-- OFFLINE SÁV -->
   <div id="offline-banner">
-    <span id="offline-text">📦 0 offline mentés várakozik</span>
-    <button id="btn-sync-offline" type="button" onclick="szinkronizalOfflineAdatok()">📤 Feltöltés most</button>
+    <span id="offline-text">📦 0 offline felmérés várakozik</span>
+    <button id="btn-sync-offline" type="button" onclick="szinkronizalOfflineAdatok()">📤 Összes feltöltése</button>
   </div>
 
   <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madármegfigyelés</h3>
@@ -88,10 +88,11 @@
   <!-- FAJOK LISTÁJA -->
   <div id="fajok-lista"></div>
 
-  <!-- RÖGZÍTETT MENTÉS ÉS LETÖLTÉS SÁV -->
+  <!-- A 3 DARAB FIX ALSÓ GOMB -->
   <div class="footer-bar">
-    <button type="button" class="btn-action btn-excel" onclick="letoltesExcelbe()">📥 Excel (CSV)</button>
-    <button type="button" class="btn-action btn-save" onclick="mentesInditasa()">💾 Mentés (Felhő / Offline)</button>
+    <button type="button" class="btn-action btn-csv" onclick="letoltesExcelbe()">📥 Letöltés CSV</button>
+    <button type="button" class="btn-action btn-offline" onclick="mentesOffline()">💾 Mentés Telefonra</button>
+    <button type="button" class="btn-action btn-online" onclick="mentesOnline()">☁️ Feltöltés Táblázatba</button>
   </div>
 
   <script>
@@ -378,22 +379,28 @@
       return mentendoSorok;
     }
 
-    // FŐ MENTÉS: Online esetén felküldi, offline esetén tárolja
-    function mentesInditasa() {
+    // GOMB 1: Offline mentés a telefon memóriájába
+    function mentesOffline() {
       const mentendoSorok = getOsszesitettAdatok();
       if (!mentendoSorok) return;
 
-      // Ha nincs internetkapcsolat
-      if (!navigator.onLine) {
-        offlineTarol(mentendoSorok);
-        return;
-      }
+      let tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      tarolt = tarolt.concat(mentendoSorok);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tarolt));
 
-      const btn = document.querySelector('.btn-save');
+      alert(`💾 ${mentendoSorok.length} faj sikeresen elmentve a telefonra!\n\nAmikor újra van térerőd, a felső narancssárga gombbal küldheted be a táblázatba.`);
+      location.reload();
+    }
+
+    // GOMB 2: Közvetlen feltöltés a Google Táblázatba
+    function mentesOnline() {
+      const mentendoSorok = getOsszesitettAdatok();
+      if (!mentendoSorok) return;
+
+      const btn = document.querySelector('.btn-online');
       btn.innerText = "Küldés...";
       btn.disabled = true;
 
-      // Megpróbáljuk felküldeni a felhőbe
       fetch(FELHO_API_URL, {
         method: "POST",
         mode: "no-cors",
@@ -401,61 +408,19 @@
         body: JSON.stringify({ uj_megfigyelesek: mentendoSorok })
       })
       .then(() => {
-        btn.innerText = "💾 Mentés (Felhő / Offline)";
+        btn.innerText = "☁️ Feltöltés Táblázatba";
         btn.disabled = false;
-        alert(`✅ Siker! ${mentendoSorok.length} faj közvetlenül felment a Google Táblázatba!`);
+        alert(`✅ Siker! ${mentendoSorok.length} faj beküldve a Google Táblázatba!`);
         location.reload();
       })
-      .catch(() => {
-        btn.innerText = "💾 Mentés (Felhő / Offline)";
+      .catch(err => {
+        btn.innerText = "☁️ Feltöltés Táblázatba";
         btn.disabled = false;
-        // Ha nem sikerült a hálózat miatt, elmentjük a telefonra
-        offlineTarol(mentendoSorok);
+        alert("Hálózati hiba! Használd a narancssárga 'Mentés Telefonra' gombot offline módban.");
       });
     }
 
-    function offlineTarol(sorok) {
-      let tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      tarolt = tarolt.concat(sorok);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tarolt));
-
-      alert(`📶 Nincs internetkapcsolat!\n\n${sorok.length} faj sikeresen elmentve a telefon belső memóriájába.\nAmint lesz térerőd, a felső narancssárga sávval egy kattintással feltöltheted!`);
-      location.reload();
-    }
-
-    // OFFLINE ADATOK TÖMEGES FELTÖLTÉSE
-    function szinkronizalOfflineAdatok() {
-      const tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      if (tarolt.length === 0) return;
-
-      if (!navigator.onLine) {
-        alert("Még mindig nincs elérhető internetkapcsolat a feltöltéshez!");
-        return;
-      }
-
-      const btn = document.getElementById("btn-sync-offline");
-      btn.innerText = "Feltöltés...";
-      btn.disabled = true;
-
-      fetch(FELHO_API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uj_megfigyelesek: tarolt })
-      })
-      .then(() => {
-        localStorage.removeItem(STORAGE_KEY);
-        alert(`🎉 Siker! Mind a ${tarolt.length} korábban elmentett offline megfigyelés feltöltve a Google Táblázatba!`);
-        location.reload();
-      })
-      .catch((err) => {
-        btn.innerText = "📤 Feltöltés most";
-        btn.disabled = false;
-        alert("Hiba a feltöltés során: " + err);
-      });
-    }
-
-    // CSV LETÖLTÉS GOMB
+    // GOMB 3: CSV letöltése
     function letoltesExcelbe() {
       const mentendoSorok = getOsszesitettAdatok();
       if (!mentendoSorok || mentendoSorok.length === 0) return;
@@ -486,6 +451,33 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    // Felső narancssárga sáv: Offline gyűjtő beküldése
+    function szinkronizalOfflineAdatok() {
+      const tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (tarolt.length === 0) return;
+
+      const btn = document.getElementById("btn-sync-offline");
+      btn.innerText = "Feltöltés...";
+      btn.disabled = true;
+
+      fetch(FELHO_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uj_megfigyelesek: tarolt })
+      })
+      .then(() => {
+        localStorage.removeItem(STORAGE_KEY);
+        alert(`🎉 Siker! Mind a ${tarolt.length} korábban elmentett offline faj bekerült a Google Táblázatba!`);
+        location.reload();
+      })
+      .catch((err) => {
+        btn.innerText = "📤 Összes feltöltése";
+        btn.disabled = false;
+        alert("Hiba a feltöltéskor: " + err);
+      });
     }
   </script>
 
