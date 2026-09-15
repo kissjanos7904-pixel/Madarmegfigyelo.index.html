@@ -1,20 +1,22 @@
 {
-  "name": "Faunisztikai Adatrögzítő",
-  "short_name": "MadárAdat",
-  "start_url": "index.html",
+  "name": "Madártani Adatrögzítő",
+  "short_name": "MadárApp",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#1e293b",
+  "background_color": "#1e1e1e",
+  "theme_color": "#1e1e1e",
   "icons": [
     {
-      "src": "https://icon2.png?v=2",
+      "src": "./icon2.png?v=99",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://icon2.png?v=2",
+      "src": "./icon2.png?v=99",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
