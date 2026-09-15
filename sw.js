@@ -1,4 +1,4 @@
-const CACHE_NAME = 'madar-app-v1';
+const CACHE_NAME = 'madar-app-v2';
 const ASSETS = [
   './',
   './index.html',
