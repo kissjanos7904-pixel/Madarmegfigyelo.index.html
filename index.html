@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MadárApp">
   
-  <link rel="manifest" href="./manifest.json?v=215">
-  <link rel="apple-touch-icon" href="./icon2.png?v=215">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=215">
-  <link rel="shortcut icon" href="./icon2.png?v=215">
+  <link rel="manifest" href="./manifest.json?v=300">
+  <link rel="apple-touch-icon" href="./icon2.png?v=300">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=300">
+  <link rel="shortcut icon" href="./icon2.png?v=300">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -35,31 +35,9 @@
     .row { display: flex; gap: 8px; }
     .col { flex: 1; }
     
-    .voice-control-box {
-      background: #232d36; border: 2px dashed #007acc; border-radius: 8px; padding: 10px;
-      margin-bottom: 12px; text-align: center;
-    }
-    .btn-mic-main {
-      background: #007acc; color: white; border: none; border-radius: 50px;
-      padding: 10px 20px; font-size: 0.95rem; font-weight: bold; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn-mic-main.listening {
-      background: #c0392b; animation: pulse 1.2s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
-      70% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
-    }
-    .voice-hint { font-size: 0.75rem; color: #95a5a6; margin-top: 6px; }
-
     .faj-box { background: #333; border: 1px solid #555; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
     .faj-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .faj-actions { display: flex; gap: 6px; }
     .btn-del { background: #a93226; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-    .btn-mic-item { background: #2c3e50; color: white; border: 1px solid #7f8c8d; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; }
-    .btn-mic-item.listening { background: #c0392b; }
 
     .qty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
     .qty-item { text-align: center; }
@@ -86,16 +64,6 @@
 
   <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madártani Adatrögzítő</h3>
 
-  <!-- HANGVEZÉRLŐ PANEL -->
-  <div class="voice-control-box">
-    <button type="button" id="btn-voice-main" class="btn-mic-main" onclick="toggleMainVoice()">
-      🎙️ <span>Beszédfelismerés indítása</span>
-    </button>
-    <div class="voice-hint">
-      Mondd be: <em>„Tőkés réce 5”</em> vagy <em>„Fekete gólya 1 hím 2 tojó”</em>
-    </div>
-  </div>
-
   <!-- KÖZÖS ADATOK -->
   <div class="card">
     <label>Időpont (ÉÉÉÉ.HH.NN) *</label>
@@ -120,15 +88,7 @@
   </div>
 
   <!-- FAJ GOMB -->
-  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Kézi rögzítés)</button>
+  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása</button>
 
   <!-- FAJOK LISTÁJA -->
-  <div id="fajok-lista"></div>
-
-  <!-- GLOBÁLIS FAJLISTA (EGYSZER TÖLTŐDIK BE A MEMÓRIÁBA) -->
-  <datalist id="dl-fajok"></datalist>
-
-  <!-- ALSÓ RÖGZÍTŐ SÁV -->
-  <div class="footer-bar">
-    <button type="button" class="btn-action btn-csv" onclick="letoltesExcelbe()">📥 Letöltés CSV</button>
-    <button type="button" class="btn-action btn-offline" onclick="mentesOffline()">💾 Mentés Telefonra</
+  <div id="fajok-
