@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MadárApp">
   
-  <link rel="manifest" href="./manifest.json?v=205">
-  <link rel="apple-touch-icon" href="./icon2.png?v=205">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=205">
-  <link rel="shortcut icon" href="./icon2.png?v=205">
+  <link rel="manifest" href="./manifest.json?v=210">
+  <link rel="apple-touch-icon" href="./icon2.png?v=210">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=210">
+  <link rel="shortcut icon" href="./icon2.png?v=210">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -85,4 +85,32 @@
     <button id="btn-sync-offline" type="button" onclick="szinkronizalOfflineAdatok()">📤 Összes feltöltése</button>
   </div>
 
-  <h3 style="text-align:center; margin-
+  <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madártani Adatrögzítő</h3>
+
+  <!-- HANGVEZÉRLŐ PANEL -->
+  <div class="voice-control-box">
+    <button type="button" id="btn-voice-main" class="btn-mic-main" onclick="toggleMainVoice()">
+      🎙️ <span>Beszédfelismerés indítása</span>
+    </button>
+    <div class="voice-hint">
+      Mondd be: <em>„Tőkés réce 5”</em> vagy <em>„Fekete gólya 1 hím 2 tojó”</em>
+    </div>
+  </div>
+
+  <!-- KÖZÖS ADATOK -->
+  <div class="card">
+    <label>Időpont (ÉÉÉÉ.HH.NN) *</label>
+    <input type="text" id="idopont" required>
+
+    <div class="row">
+      <div class="col">
+        <label>Terület *</label>
+        <input type="text" id="terulet" oninput="this.value = this.value.toUpperCase()" placeholder="UTM / NÉV..." required>
+      </div>
+      <div class="col">
+        <label>Körzet</label>
+        <input type="text" id="korzet" oninput="this.value = this.value.toUpperCase()" placeholder="PL. HALASTÓ...">
+      </div>
+    </div>
+
+    <label>Megfigyelő 1
