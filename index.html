@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MadárApp">
   
-  <link rel="manifest" href="./manifest.json?v=210">
-  <link rel="apple-touch-icon" href="./icon2.png?v=210">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=210">
-  <link rel="shortcut icon" href="./icon2.png?v=210">
+  <link rel="manifest" href="./manifest.json?v=215">
+  <link rel="apple-touch-icon" href="./icon2.png?v=215">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=215">
+  <link rel="shortcut icon" href="./icon2.png?v=215">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -35,7 +35,6 @@
     .row { display: flex; gap: 8px; }
     .col { flex: 1; }
     
-    /* Hangvezérlés stílusok */
     .voice-control-box {
       background: #232d36; border: 2px dashed #007acc; border-radius: 8px; padding: 10px;
       margin-bottom: 12px; text-align: center;
@@ -113,4 +112,23 @@
       </div>
     </div>
 
-    <label>Megfigyelő 1
+    <label>Megfigyelő 1 *</label>
+    <input type="text" id="megf1" oninput="this.value = this.value.toUpperCase()" placeholder="ELSŐDLEGES MEGFIGYELŐ..." required>
+
+    <div id="extra-megf"></div>
+    <button type="button" onclick="addMegfigyelo()" style="background:none; border:1px dashed #777; color:#ccc; width:100%; padding:6px; border-radius:4px; font-size:0.8rem; margin-top:2px;">+ További megfigyelő</button>
+  </div>
+
+  <!-- FAJ GOMB -->
+  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Kézi rögzítés)</button>
+
+  <!-- FAJOK LISTÁJA -->
+  <div id="fajok-lista"></div>
+
+  <!-- GLOBÁLIS FAJLISTA (EGYSZER TÖLTŐDIK BE A MEMÓRIÁBA) -->
+  <datalist id="dl-fajok"></datalist>
+
+  <!-- ALSÓ RÖGZÍTŐ SÁV -->
+  <div class="footer-bar">
+    <button type="button" class="btn-action btn-csv" onclick="letoltesExcelbe()">📥 Letöltés CSV</button>
+    <button type="button" class="btn-action btn-offline" onclick="mentesOffline()">💾 Mentés Telefonra</
