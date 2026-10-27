@@ -9,11 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MadárApp">
   
-  <!-- Kényszerített új ikon és manifest hivatkozások -->
-  <link rel="manifest" href="./manifest.json?v=99">
-  <link rel="apple-touch-icon" href="./icon2.png?v=99">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=99">
-  <link rel="shortcut icon" href="./icon2.png?v=99">
+  <link rel="manifest" href="./manifest.json?v=101">
+  <link rel="apple-touch-icon" href="./icon2.png?v=101">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=101">
+  <link rel="shortcut icon" href="./icon2.png?v=101">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -36,10 +35,33 @@
     .row { display: flex; gap: 8px; }
     .col { flex: 1; }
     
+    /* Hangvezérlés stílusok */
+    .voice-control-box {
+      background: #232d36; border: 2px dashed #007acc; border-radius: 8px; padding: 10px;
+      margin-bottom: 12px; text-align: center;
+    }
+    .btn-mic-main {
+      background: #007acc; color: white; border: none; border-radius: 50px;
+      padding: 10px 20px; font-size: 0.95rem; font-weight: bold; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-mic-main.listening {
+      background: #c0392b; animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+      70% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+    }
+    .voice-hint { font-size: 0.75rem; color: #95a5a6; margin-top: 6px; }
+
     .faj-box { background: #333; border: 1px solid #555; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
     .faj-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .faj-actions { display: flex; gap: 6px; }
     .btn-del { background: #a93226; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-    
+    .btn-mic-item { background: #2c3e50; color: white; border: 1px solid #7f8c8d; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; }
+    .btn-mic-item.listening { background: #c0392b; }
+
     .qty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
     .qty-item { text-align: center; }
     .qty-item span { font-size: 0.7rem; color: #aaa; }
@@ -65,6 +87,16 @@
 
   <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madártani Adatrögzítő</h3>
 
+  <!-- HANGVEZÉRLŐ PANEL -->
+  <div class="voice-control-box">
+    <button type="button" id="btn-voice-main" class="btn-mic-main" onclick="toggleMainVoice()">
+      🎙️ <span>Beszédfelismerés indítása</span>
+    </button>
+    <div class="voice-hint">
+      Mondd be egyben: <em>„Fekete gólya kettő példány”</em> vagy <em>„Széncinege egy hím két tojó”</em>
+    </div>
+  </div>
+
   <!-- KÖZÖS ADATOK -->
   <div class="card">
     <label>Időpont (ÉÉÉÉ.HH.NN) *</label>
@@ -89,12 +121,12 @@
   </div>
 
   <!-- FAJ GOMB -->
-  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Felülre nyílik)</button>
+  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Kézi rögzítés)</button>
 
   <!-- FAJOK LISTÁJA -->
   <div id="fajok-lista"></div>
 
-  <!-- FIX GOMBOK -->
+  <!-- ALSÓ GOMBOK -->
   <div class="footer-bar">
     <button type="button" class="btn-action btn-csv" onclick="letoltesExcelbe()">📥 Letöltés CSV</button>
     <button type="button" class="btn-action btn-offline" onclick="mentesOffline()">💾 Mentés Telefonra</button>
@@ -195,6 +227,193 @@
     let fajSzamlalo = 0;
     let megfSzamlalo = 1;
 
+    // --- BESZÉDFELISMERÉS (WEB SPEECH API) MOTOR ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+    let activeBoxId = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'hu-HU';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = function() {
+        isListening = true;
+        updateMicUi(true);
+      };
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        if (activeBoxId) {
+          feldolgozEgyediHangot(activeBoxId, transcript);
+        } else {
+          feldolgozTeljesHangot(transcript);
+        }
+      };
+
+      recognition.onerror = function(event) {
+        console.warn("Beszédfelismerési hiba:", event.error);
+        stopListening();
+      };
+
+      recognition.onend = function() {
+        stopListening();
+      };
+    }
+
+    function toggleMainVoice() {
+      if (!SpeechRecognition) {
+        alert("A készülék böngészője nem támogatja a beépített beszédfelismerést.");
+        return;
+      }
+      activeBoxId = null;
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function toggleBoxVoice(id) {
+      if (!SpeechRecognition) {
+        alert("A készülék böngészője nem támogatja a beépített beszédfelismerést.");
+        return;
+      }
+      activeBoxId = id;
+      if (isListening) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    }
+
+    function stopListening() {
+      isListening = false;
+      activeBoxId = null;
+      updateMicUi(false);
+    }
+
+    function updateMicUi(listening) {
+      const mainBtn = document.getElementById("btn-voice-main");
+      if (mainBtn) {
+        if (listening && !activeBoxId) {
+          mainBtn.classList.add("listening");
+          mainBtn.querySelector("span").innerText = "Hallgatom... Mondd most!";
+        } else {
+          mainBtn.classList.remove("listening");
+          mainBtn.querySelector("span").innerText = "Beszédfelismerés indítása";
+        }
+      }
+      document.querySelectorAll(".btn-mic-item").forEach(btn => {
+        btn.classList.remove("listening");
+      });
+      if (listening && activeBoxId) {
+        const activeBtn = document.querySelector(`#faj-${activeBoxId} .btn-mic-item`);
+        if (activeBtn) activeBtn.classList.add("listening");
+      }
+    }
+
+    // Magyar számszavak átalakítása számmá
+    function normalizeNumberWord(word) {
+      const map = {
+        'nulla': 0, 'egy': 1, 'kettő': 2, 'ketto': 2, 'két': 2, 'három': 3, 'harom': 3,
+        'négy': 4, 'negy': 4, 'öt': 5, 'ot': 5, 'hat': 6, 'hét': 7, 'het': 7,
+        'nyolc': 8, 'kilenc': 9, 'tíz': 10, 'tiz': 10, 'húsz': 20, 'harminc': 30,
+        'negyven': 40, 'ötven': 50, 'hatvan': 60, 'hetven': 70, 'nyolcvan': 80,
+        'kilencven': 90, 'száz': 100
+      };
+      const clean = word.toLowerCase();
+      if (!isNaN(clean)) return parseInt(clean, 10);
+      return map[clean] !== undefined ? map[clean] : null;
+    }
+
+    // Teljes mondat feldolgozása (Faj + Darabszámok + Megjegyzés)
+    function feldolgozTeljesHangot(text) {
+      const lower = text.toLowerCase();
+      
+      // 1. Faj megkeresése a listából
+      let talaltFaj = "";
+      let leghosszabbHossz = 0;
+      for (let f of FAJOK_LISTA) {
+        if (lower.includes(f.toLowerCase()) && f.length > leghosszabbHossz) {
+          talaltFaj = f;
+          leghosszabbHossz = f.length;
+        }
+      }
+
+      // 2. Kategóriák és számok kinyerése
+      let pld = null, him = null, tojo = null, ad = null, juv = null, imm = null, pull = null;
+      let megj = "";
+
+      const tokens = text.split(/\s+/);
+      for (let i = 0; i < tokens.length; i++) {
+        const val = normalizeNumberWord(tokens[i]);
+        if (val !== null) {
+          const next = (tokens[i + 1] || "").toLowerCase();
+          if (next.startsWith("hím") || next.startsWith("him")) {
+            him = (him || 0) + val; i++;
+          } else if (next.startsWith("tojó") || next.startsWith("tojo")) {
+            tojo = (tojo || 0) + val; i++;
+          } else if (next.startsWith("ad")) {
+            ad = (ad || 0) + val; i++;
+          } else if (next.startsWith("juv")) {
+            juv = (juv || 0) + val; i++;
+          } else if (next.startsWith("imm")) {
+            imm = (imm || 0) + val; i++;
+          } else if (next.startsWith("pull")) {
+            pull = (pull || 0) + val; i++;
+          } else {
+            pld = (pld || 0) + val;
+            if (next.startsWith("pld") || next.startsWith("példány") || next.startsWith("darab")) i++;
+          }
+        }
+      }
+
+      // Megjegyzés rész leválasztása, ha volt "megjegyzés" szó
+      if (lower.includes("megjegyzés")) {
+        const parts = text.split(/megjegyzés/i);
+        if (parts[1]) megj = parts[1].trim();
+      }
+
+      // Sor létrehozása és kitöltése
+      const box = addFaj();
+      if (talaltFaj) box.querySelector('.faj-nev').value = talaltFaj;
+      if (pld !== null) box.querySelector('.q-pld').value = pld;
+      if (him !== null) box.querySelector('.q-him').value = him;
+      if (tojo !== null) box.querySelector('.q-tojo').value = tojo;
+      if (ad !== null) box.querySelector('.q-ad').value = ad;
+      if (juv !== null) box.querySelector('.q-juv').value = juv;
+      if (imm !== null) box.querySelector('.q-imm').value = imm;
+      if (pull !== null) box.querySelector('.q-pull').value = pull;
+      if (megj) box.querySelector('.faj-megj').value = megj;
+
+      sum(box.querySelector('.q-pld'));
+    }
+
+    // Egyetlen megnyitott sor kiegészítése hanggal
+    function feldolgozEgyediHangot(id, text) {
+      const box = document.getElementById(`faj-${id}`);
+      if (!box) return;
+
+      const lower = text.toLowerCase();
+      let talaltFaj = "";
+      for (let f of FAJOK_LISTA) {
+        if (lower.includes(f.toLowerCase())) {
+          talaltFaj = f;
+          break;
+        }
+      }
+      if (talaltFaj) {
+        box.querySelector('.faj-nev').value = talaltFaj;
+      } else {
+        const megjInput = box.querySelector('.faj-megj');
+        megjInput.value = megjInput.value ? megjInput.value + "; " + text : text;
+      }
+    }
+
+    // --- ALAP ŰRLAP KEZELÉS ---
     window.onload = function() {
       const ma = new Date();
       const ev = ma.getFullYear();
@@ -239,7 +458,10 @@
       box.innerHTML = `
         <div class="faj-hdr">
           <span style="font-weight:bold; color:#5dade2;">Faj #${fajSzamlalo}</span>
-          <button type="button" class="btn-del" onclick="delFaj(${fajSzamlalo})">✕ Törlés</button>
+          <div class="faj-actions">
+            <button type="button" class="btn-mic-item" onclick="toggleBoxVoice(${fajSzamlalo})">🎙️ Diktálás</button>
+            <button type="button" class="btn-del" onclick="delFaj(${fajSzamlalo})">✕ Törlés</button>
+          </div>
         </div>
 
         <input list="dl-fajok" class="faj-nev" placeholder="Kezdd el gépelni a faj nevét..." required>
@@ -262,6 +484,7 @@
       `;
 
       container.insertBefore(box, container.firstChild);
+      return box;
     }
 
     function delFaj(id) {
@@ -393,7 +616,7 @@
       tarolt = tarolt.concat(mentendoSorok);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tarolt));
 
-      alert(`💾 ${mentendoSorok.length} faj sikeresen elmentve a telefonra!\n\nAmikor újra van térerőd, a felső narancssárga gombbal küldheted be a táblázatba.`);
+      alert(`💾 ${mentendoSorok.length} faj elmentve a telefonra!\n\nAmikor térerőhöz érsz, a felső narancssárga sávval feltöltheted a táblázatba.`);
       location.reload();
     }
 
@@ -485,7 +708,7 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=99');
+      navigator.serviceWorker.register('./sw.js?v=101');
     }
   </script>
 </body>
