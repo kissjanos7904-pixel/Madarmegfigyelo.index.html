@@ -296,13 +296,13 @@
   <!-- 2. FŐ ALKALMAZÁS LOGIKA -->
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_KEY = "madar_piszkozat_v12";
+    const DRAFT_KEY = "madar_piszkozat_v13";
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
       "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
       "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
-      "Faj": "Kizárólag a fajlistából választható. Az új fajsor mindig a lista tetejére kerül, hogy ne kelljen görgetni. A 💾 Mentés gombbal az összes faj egyszerre kerül rögzítésre.",
+      "Faj": "Kizárólag a fajlistából választható. A hangfelismerés külön- és egybeírt alakokat, valamint apróbb hallási eltéréseket is automatikusan azonosít.",
       "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
       "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
       "Megjegyzés": "Egyéb megjegyzések rögzítése."
@@ -605,11 +605,84 @@
       }
     }
 
+    // Szóközök és kötőjelek eltávolítása az összehasonlításhoz (pl. "kaba sólyom" -> "kabasólyom")
+    function normalizeCompact(str) {
+      return str.toLowerCase().replace(/[\s\-.,;:!?]+/g, '');
+    }
+
+    // Levenshtein-távolság két szöveg között (kisebb hallási eltérésekhez, pl. "kabosólyom" -> "kabasólyom")
+    function levenshteinDistance(a, b) {
+      const matrix = [];
+      for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+      for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+      for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+          if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j] + 1
+            );
+          }
+        }
+      }
+      return matrix[b.length][a.length];
+    }
+
+    function findBestMatchingSpecies(cleanFaj) {
+      if (!cleanFaj) return "";
+      const normInput = cleanFaj.toLowerCase().trim();
+      const compactInput = normalizeCompact(normInput);
+
+      // 1. Pontos egyezés
+      let match = FAJOK.find(function(f) { return f.toLowerCase() === normInput; });
+      if (match) return match;
+
+      // 2. Egybeírt (szóköz és kötőjel nélküli) pontos egyezés ("kaba sólyom" === "kabasólyom")
+      match = FAJOK.find(function(f) { return normalizeCompact(f) === compactInput; });
+      if (match) return match;
+
+      // 3. Egybeírt részleges egyezés ("kaba sólyom" tartalmazza vagy benne van a listaelemben)
+      if (compactInput.length >= 4) {
+        match = FAJOK.find(function(f) {
+          const cf = normalizeCompact(f);
+          return cf.includes(compactInput) || compactInput.includes(cf);
+        });
+        if (match) return match;
+      }
+
+      // 4. Hasonlóság alapú keresés (pl. "kabosólyom" -> "Kabasólyom", 1-2 karakter eltérésig)
+      let bestFaj = "";
+      let bestRatio = 0;
+
+      FAJOK.forEach(function(f) {
+        const cf = normalizeCompact(f);
+        const maxLen = Math.max(cf.length, compactInput.length);
+        if (maxLen === 0) return;
+        const dist = levenshteinDistance(cf, compactInput);
+        const similarity = 1 - (dist / maxLen);
+        if (similarity > bestRatio) {
+          bestRatio = similarity;
+          bestFaj = f;
+        }
+      });
+
+      if (bestRatio >= 0.72) {
+        return bestFaj;
+      }
+
+      return "";
+    }
+
     function parseVoiceResult(raw) {
       let s = raw.toLowerCase();
       const wordsToNum = {
         "egy":"1", "kettő":"2", "két":"2", "három":"3", "négy":"4",
-        "öt":"5", "hat":"6", "hét":"7", "nyolc":"8", "kilenc":"9", "tíz":"10"
+        "öt":"5", "hat":"6", "hét":"7", "nyolc":"8", "kilenc":"9", "tíz":"10",
+        "tizenegy":"11", "tizenkettő":"12", "tizenhárom":"13", "tizennégy":"14",
+        "tizenöt":"15", "húsz":"20", "harminc":"30", "negyven":"40", "ötven":"50", "száz":"100"
       };
       Object.keys(wordsToNum).forEach(function(w) {
         s = s.replace(new RegExp("\\b" + w + "\\b", "g"), wordsToNum[w]);
@@ -627,14 +700,15 @@
       else if (s.includes("fióka")) document.getElementById('voiceCatSelect').value = "pull";
       else document.getElementById('voiceCatSelect').value = "pld";
 
-      const cleanFaj = s.replace(/\d+/g, '').replace(/\b(példány|pld|db|darab|hím|tojó|öreg|fiatal|fióka)\b/g, '').trim();
-      if (cleanFaj) {
-        const found = FAJOK.find(function(f) {
-          return f.toLowerCase().includes(cleanFaj) || cleanFaj.includes(f.toLowerCase());
-        });
-        if (found) {
-          document.getElementById('voiceFajSelect').value = found;
-        }
+      const cleanFaj = s
+        .replace(/\d+/g, ' ')
+        .replace(/\b(példány|pld|db|darab|hím|hímek|tojó|tojók|öreg|fiatal|fióka)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const matchedSpecies = findBestMatchingSpecies(cleanFaj);
+      if (matchedSpecies) {
+        document.getElementById('voiceFajSelect').value = matchedSpecies;
       }
     }
 
