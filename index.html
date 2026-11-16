@@ -62,6 +62,10 @@
       padding: 10px;
       margin-bottom: 10px;
     }
+    .species-block.top-active {
+      border-color: #3b82f6;
+      background: #17253b;
+    }
     .species-block-header {
       display: flex;
       justify-content: space-between;
@@ -103,7 +107,7 @@
       font-weight: 700;
       font-size: 0.9rem;
       cursor: pointer;
-      margin-top: 2px;
+      margin-bottom: 10px;
     }
 
     .modal-overlay {
@@ -132,7 +136,7 @@
     .num-col label { font-size: 0.72rem; margin-bottom: 2px; color: var(--text-muted); }
     .num-col input { text-align: center; margin-bottom: 0; padding: 9px 4px; font-size: 0.9rem; }
     
-    .obs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .obs-header { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; margin-bottom: 6px; }
     .btn-small { background: var(--border); border: none; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
     
     .bottom-bar {
@@ -159,7 +163,7 @@
     <button type="button" class="btn-warn-sync" onclick="syncCloud()">☁️ Feltöltés</button>
   </div>
 
-  <!-- 1. Alapadatok -->
+  <!-- 1. Alapadatok (Időpont, Terület, Körzet és Megfigyelők) -->
   <div class="card">
     <div class="label-row">
       <span>Időpont (ÉÉÉÉ.HH.NN) *</span>
@@ -184,22 +188,7 @@
         <input type="text" id="entryKorzet" class="uppercase" placeholder="PL. HALASTÓ" oninput="saveDraft()">
       </div>
     </div>
-  </div>
 
-  <!-- 2. Megfigyelt fajok listája -->
-  <div class="card">
-    <div class="label-row" style="margin-bottom: 8px;">
-      <span>Megfigyelt fajok és mennyiségek *</span>
-      <button type="button" class="btn-q" onclick="alertHelp('Faj')">?</button>
-    </div>
-
-    <div id="speciesRowsContainer"></div>
-
-    <button type="button" class="btn-add-species" onclick="addNewSpeciesRow()">+ Új faj sor hozzáadása</button>
-  </div>
-
-  <!-- 3. Megfigyelők és Megjegyzés -->
-  <div class="card">
     <div class="obs-header">
       <div class="label-row" style="margin: 0;">
         <span>Megfigyelők *</span>
@@ -212,12 +201,27 @@
       <input type="text" class="obs-input uppercase" list="obsList" placeholder="MEGFIGYELŐ 2" oninput="saveDraft()">
     </div>
     <datalist id="obsList"></datalist>
+  </div>
 
-    <div class="label-row" style="margin-top: 8px;">
+  <!-- 2. Megfigyelt fajok listája (legújabb mindig felül) -->
+  <div class="card">
+    <div class="label-row" style="margin-bottom: 8px;">
+      <span>Megfigyelt fajok és mennyiségek *</span>
+      <button type="button" class="btn-q" onclick="alertHelp('Faj')">?</button>
+    </div>
+
+    <button type="button" class="btn-add-species" onclick="addNewSpeciesRow()">+ Új faj sor hozzáadása (felülre)</button>
+
+    <div id="speciesRowsContainer"></div>
+  </div>
+
+  <!-- 3. Megjegyzés -->
+  <div class="card">
+    <div class="label-row">
       <span>Megjegyzés</span>
       <button type="button" class="btn-q" onclick="alertHelp('Megjegyzés')">?</button>
     </div>
-    <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..." oninput="saveDraft()"></textarea>
+    <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..." oninput="saveDraft()" style="margin-bottom: 0;"></textarea>
   </div>
 
   <div class="card" style="text-align: center;">
@@ -292,13 +296,13 @@
   <!-- 2. FŐ ALKALMAZÁS LOGIKA -->
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_KEY = "madar_piszkozat_v10";
+    const DRAFT_KEY = "madar_piszkozat_v12";
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
       "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
       "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
-      "Faj": "Kizárólag a fajlistából választható. A '🎤 Hang' gombbal diktálva a jóváhagyás után automatikusan nyílik alatta az új faj sor, és az összes faj egymás alatt marad a 💾 Mentés megnyomásáig.",
+      "Faj": "Kizárólag a fajlistából választható. Az új fajsor mindig a lista tetejére kerül, hogy ne kelljen görgetni. A 💾 Mentés gombbal az összes faj egyszerre kerül rögzítésre.",
       "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
       "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
       "Megjegyzés": "Egyéb megjegyzések rögzítése."
@@ -321,11 +325,12 @@
 
       speciesRows.forEach(function(row, idx) {
         const block = document.createElement('div');
-        block.className = 'species-block';
+        block.className = idx === 0 ? 'species-block top-active' : 'species-block';
 
+        const sorszam = speciesRows.length - idx;
         const header = document.createElement('div');
         header.className = 'species-block-header';
-        header.innerHTML = '<span>#' + (idx + 1) + '. Megfigyelt faj</span>';
+        header.innerHTML = '<span>#' + sorszam + '. Megfigyelt faj' + (idx === 0 ? ' (Aktuális)' : '') + '</span>';
 
         if (speciesRows.length > 1) {
           const delBtn = document.createElement('button');
@@ -432,7 +437,7 @@
     }
 
     function addNewSpeciesRow() {
-      speciesRows.push(createEmptySpeciesRow());
+      speciesRows.unshift(createEmptySpeciesRow());
       renderSpeciesRows();
       saveDraft();
     }
@@ -657,8 +662,8 @@
       speciesRows[activeRowIndex][cat] = String(parseInt(c, 10));
       recalcRowSum(activeRowIndex);
 
-      if (activeRowIndex === speciesRows.length - 1) {
-        speciesRows.push(createEmptySpeciesRow());
+      if (activeRowIndex === 0) {
+        speciesRows.unshift(createEmptySpeciesRow());
       }
 
       renderSpeciesRows();
@@ -707,6 +712,7 @@
       const kitoltottSorok = [];
       for (let i = 0; i < speciesRows.length; i++) {
         const r = speciesRows[i];
+        const sorszam = speciesRows.length - i;
         const hasAnyNum = ['pld', 'him', 'tojo', 'ad', 'juv', 'imm', 'pull'].some(function(k) {
           return r[k] !== "" && !isNaN(parseInt(r[k], 10));
         });
@@ -714,11 +720,11 @@
         if (!r.faj && !hasAnyNum) continue;
 
         if (!r.faj) {
-          alert("A #" + (i + 1) + ". sornál nincs kiválasztva faj!");
+          alert("A #" + sorszam + ". sornál nincs kiválasztva faj!");
           return;
         }
         if (!hasAnyNum) {
-          alert("A #" + (i + 1) + ". sornál (" + r.faj + ") nincs megadva mennyiség!");
+          alert("A #" + sorszam + ". sornál (" + r.faj + ") nincs megadva mennyiség!");
           return;
         }
 
@@ -730,10 +736,12 @@
         return;
       }
 
+      const mentesiSorrend = kitoltottSorok.slice().reverse();
+
       const tx = db.transaction("megfigyelesek", "readwrite");
       const store = tx.objectStore("megfigyelesek");
 
-      kitoltottSorok.forEach(function(r) {
+      mentesiSorrend.forEach(function(r) {
         const toIntOrEmpty = function(val) {
           const n = parseInt(val, 10);
           return isNaN(n) ? "" : n;
@@ -768,7 +776,7 @@
       });
 
       tx.oncomplete = function() {
-        alert(kitoltottSorok.length + " megfigyelt faj elmentve a telefonra! Új adatlap megnyitva.");
+        alert(mentesiSorrend.length + " megfigyelt faj elmentve a telefonra! Új adatlap megnyitva.");
         speciesRows = [createEmptySpeciesRow()];
         renderSpeciesRows();
         document.getElementById('txtMegjegyzes').value = '';
