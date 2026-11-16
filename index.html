@@ -125,10 +125,10 @@
 
     .voice-box {
       background: var(--card); border: 2px solid var(--primary); border-radius: 12px;
-      padding: 18px; margin: auto; width: 100%; max-width: 420px;
+      padding: 16px; margin: auto; width: 100%; max-width: 440px;
     }
-    .voice-msg { text-align: center; font-weight: 700; font-size: 0.92rem; margin-bottom: 10px; color: #fbbf24; line-height: 1.35; }
-    .voice-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+    .voice-msg { text-align: center; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; color: #fbbf24; line-height: 1.35; }
+    .voice-label { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 4px; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .grid-num { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -244,34 +244,29 @@
     <div id="fajModalList" class="faj-modal-list"></div>
   </div>
 
-  <!-- Hangalapú Faj + Egyedszám validáló ablak -->
+  <!-- Hangalapú Faj + Több kategóriás egyedszám validáló ablak -->
   <div id="voiceModal" class="modal-overlay">
     <div class="voice-box">
-      <div class="voice-msg" id="voiceMsg">🎙️ Mondd a fajt és a számot (pl. „Kanalas réce 12”)</div>
+      <div class="voice-msg" id="voiceMsg">🎙️ Mondd a fajt és a mennyiségeket (pl. „Rétisas 2 ad 3 juv”)</div>
 
-      <div class="voice-label">Diktált vagy beírt szöveg (telefon billentyűzet mikrofonnal is használható):</div>
-      <input type="text" id="voiceRawInput" placeholder="pl. kanalas réce 12" oninput="parseVoiceResult(this.value)">
+      <div class="voice-label">Diktált vagy beírt szöveg:</div>
+      <input type="text" id="voiceRawInput" placeholder="pl. rétisas 2 ad 3 juv" oninput="parseVoiceResult(this.value)">
 
       <div class="voice-label">Faj (csak a listából):</div>
       <select id="voiceFajSelect"></select>
 
-      <div class="grid-2" style="margin-bottom: 12px;">
-        <div>
-          <div class="voice-label">Egyedszám:</div>
-          <input type="number" id="voiceCountInput" min="1" placeholder="pl. 12" style="margin-bottom: 0;">
-        </div>
-        <div>
-          <div class="voice-label">Kategória:</div>
-          <select id="voiceCatSelect" style="margin-bottom: 0;">
-            <option value="pld">pld.</option>
-            <option value="him">Hím</option>
-            <option value="tojo">Tojó</option>
-            <option value="ad">Ad</option>
-            <option value="juv">Juv</option>
-            <option value="imm">Imm</option>
-            <option value="pull">Pull</option>
-          </select>
-        </div>
+      <div class="voice-label">Felismert mennyiségek (szükség esetén javítható):</div>
+      <div class="grid-num" style="margin-bottom: 6px;">
+        <div class="num-col"><label>pld.</label><input type="number" id="v_pld" min="0"></div>
+        <div class="num-col"><label>Hím</label><input type="number" id="v_him" min="0"></div>
+        <div class="num-col"><label>Tojó</label><input type="number" id="v_tojo" min="0"></div>
+        <div class="num-col"><label>Ad</label><input type="number" id="v_ad" min="0"></div>
+      </div>
+      <div class="grid-num" style="margin-bottom: 14px;">
+        <div class="num-col"><label>Juv</label><input type="number" id="v_juv" min="0"></div>
+        <div class="num-col"><label>Imm</label><input type="number" id="v_imm" min="0"></div>
+        <div class="num-col"><label>Pull</label><input type="number" id="v_pull" min="0"></div>
+        <div class="num-col"><label></label></div>
       </div>
 
       <div style="display: flex; gap: 8px;">
@@ -296,13 +291,13 @@
   <!-- 2. FŐ ALKALMAZÁS LOGIKA -->
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_KEY = "madar_piszkozat_v13";
+    const DRAFT_KEY = "madar_piszkozat_v14";
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
       "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
       "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
-      "Faj": "Kizárólag a fajlistából választható. A hangfelismerés külön- és egybeírt alakokat, valamint apróbb hallási eltéréseket is automatikusan azonosít.",
+      "Faj": "Kizárólag a fajlistából választható. A hangfelismerés több kor- és ivarkategóriát is kezel egyszerre (pl. 'rétisas 2 ad 3 juv').",
       "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
       "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
       "Megjegyzés": "Egyéb megjegyzések rögzítése."
@@ -553,8 +548,9 @@
         sel.appendChild(opt);
       });
       document.getElementById('voiceRawInput').value = '';
-      document.getElementById('voiceCountInput').value = '';
-      document.getElementById('voiceCatSelect').value = 'pld';
+      ['v_pld', 'v_him', 'v_tojo', 'v_ad', 'v_juv', 'v_imm', 'v_pull'].forEach(function(id) {
+        document.getElementById(id).value = '';
+      });
       document.getElementById('voiceModal').style.display = 'flex';
       startListening();
     }
@@ -569,7 +565,7 @@
     function startListening() {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRec) {
-        document.getElementById('voiceMsg').innerText = "Koppints az alsó szövegmezőbe, és használd a telefon billentyűzetének mikrofonját!";
+        document.getElementById('voiceMsg').innerText = "Koppints a szövegmezőbe, és használd a telefon billentyűzetének mikrofonját!";
         document.getElementById('voiceRawInput').focus();
         return;
       }
@@ -578,7 +574,7 @@
         try { rec.abort(); } catch (e) {}
       }
 
-      document.getElementById('voiceMsg').innerText = "🔴 Hallgatlak! Mondd a fajt és a számot (pl. „Kanalas réce 12”)...";
+      document.getElementById('voiceMsg').innerText = "🔴 Hallgatlak! Mondd a fajt és a mennyiségeket (pl. „Rétisas 2 ad 3 juv”)...";
 
       rec = new SpeechRec();
       rec.lang = 'hu-HU';
@@ -593,24 +589,22 @@
       };
 
       rec.onerror = function(e) {
-        document.getElementById('voiceMsg').innerText = "Mikrofon hiba (" + e.error + "). Koppints az alábbi mezőbe, és diktálj a telefon billentyűzetével!";
+        document.getElementById('voiceMsg').innerText = "Mikrofon hiba (" + e.error + "). Koppints az alábbi mezőbe, és diktálj a billentyűzettel!";
         document.getElementById('voiceRawInput').focus();
       };
 
       try {
         rec.start();
       } catch (e) {
-        document.getElementById('voiceMsg').innerText = "Koppints az alábbi mezőbe, és diktálj a telefon billentyűzetével!";
+        document.getElementById('voiceMsg').innerText = "Koppints az alábbi mezőbe, és diktálj a billentyűzettel!";
         document.getElementById('voiceRawInput').focus();
       }
     }
 
-    // Szóközök és kötőjelek eltávolítása az összehasonlításhoz (pl. "kaba sólyom" -> "kabasólyom")
     function normalizeCompact(str) {
       return str.toLowerCase().replace(/[\s\-.,;:!?]+/g, '');
     }
 
-    // Levenshtein-távolság két szöveg között (kisebb hallási eltérésekhez, pl. "kabosólyom" -> "kabasólyom")
     function levenshteinDistance(a, b) {
       const matrix = [];
       for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -636,15 +630,12 @@
       const normInput = cleanFaj.toLowerCase().trim();
       const compactInput = normalizeCompact(normInput);
 
-      // 1. Pontos egyezés
       let match = FAJOK.find(function(f) { return f.toLowerCase() === normInput; });
       if (match) return match;
 
-      // 2. Egybeírt (szóköz és kötőjel nélküli) pontos egyezés ("kaba sólyom" === "kabasólyom")
       match = FAJOK.find(function(f) { return normalizeCompact(f) === compactInput; });
       if (match) return match;
 
-      // 3. Egybeírt részleges egyezés ("kaba sólyom" tartalmazza vagy benne van a listaelemben)
       if (compactInput.length >= 4) {
         match = FAJOK.find(function(f) {
           const cf = normalizeCompact(f);
@@ -653,7 +644,6 @@
         if (match) return match;
       }
 
-      // 4. Hasonlóság alapú keresés (pl. "kabosólyom" -> "Kabasólyom", 1-2 karakter eltérésig)
       let bestFaj = "";
       let bestRatio = 0;
 
@@ -676,36 +666,91 @@
       return "";
     }
 
+    // Többszörös mennyiség + kategória (ad, juv, imm, pull, hím, tojó, pld) feldolgozása
     function parseVoiceResult(raw) {
+      // Előző mezők nullázása
+      ['v_pld', 'v_him', 'v_tojo', 'v_ad', 'v_juv', 'v_imm', 'v_pull'].forEach(function(id) {
+        document.getElementById(id).value = '';
+      });
+
       let s = raw.toLowerCase();
+
+      // 1. Számok és betűk szétválasztása, ha egybeírta a beszédfelismerő (pl. "rétisas2ad" -> "rétisas 2 ad")
+      s = s.replace(/([a-záéíóöőúüű])(\d)/gi, '$1 $2');
+      s = s.replace(/(\d)([a-záéíóöőúüű])/gi, '$1 $2');
+
+      // 2. Magyar számnevek átalakítása számjegyekké
       const wordsToNum = {
         "egy":"1", "kettő":"2", "két":"2", "három":"3", "négy":"4",
         "öt":"5", "hat":"6", "hét":"7", "nyolc":"8", "kilenc":"9", "tíz":"10",
         "tizenegy":"11", "tizenkettő":"12", "tizenhárom":"13", "tizennégy":"14",
-        "tizenöt":"15", "húsz":"20", "harminc":"30", "negyven":"40", "ötven":"50", "száz":"100"
+        "tizenöt":"15", "tizenhat":"16", "tizenhét":"17", "tizennyolc":"18", "tizenkilenc":"19",
+        "húsz":"20", "harminc":"30", "negyven":"40", "ötven":"50", "hatvan":"60", "hetven":"70", "nyolcvan":"80", "kilencven":"90", "száz":"100"
       };
       Object.keys(wordsToNum).forEach(function(w) {
         s = s.replace(new RegExp("\\b" + w + "\\b", "g"), wordsToNum[w]);
       });
 
-      const numMatch = s.match(/(\d+)/);
-      if (numMatch) {
-        document.getElementById('voiceCountInput').value = numMatch[1];
+      // 3. Kategória szinonimák egységesítése
+      const catPatterns = [
+        { key: 'v_him', regex: /^(hím|hímek|hímet)$/ },
+        { key: 'v_tojo', regex: /^(tojó|tojók|tojót|nőstény|nőstények)$/ },
+        { key: 'v_ad', regex: /^(ad|adult|öreg|öregek|öreget)$/ },
+        { key: 'v_juv', regex: /^(juv|juvenilis|fiatal|fiatalok|fiatalt)$/ },
+        { key: 'v_imm', regex: /^(imm|immatur|átszíneződő)$/ },
+        { key: 'v_pull', regex: /^(pull|pullus|fióka|fiókák|fiókát)$/ },
+        { key: 'v_pld', regex: /^(pld|példány|példányt|db|darab|darabot)$/ }
+      ];
+
+      function detectCategory(word) {
+        if (!word) return null;
+        for (let i = 0; i < catPatterns.length; i++) {
+          if (catPatterns[i].regex.test(word)) return catPatterns[i].key;
+        }
+        return null;
       }
 
-      if (s.includes("hím")) document.getElementById('voiceCatSelect').value = "him";
-      else if (s.includes("tojó")) document.getElementById('voiceCatSelect').value = "tojo";
-      else if (s.includes("öreg")) document.getElementById('voiceCatSelect').value = "ad";
-      else if (s.includes("fiatal")) document.getElementById('voiceCatSelect').value = "juv";
-      else if (s.includes("fióka")) document.getElementById('voiceCatSelect').value = "pull";
-      else document.getElementById('voiceCatSelect').value = "pld";
+      // 4. Tokenizálás és "szám + kategória" vagy "kategória + szám" párok kigyűjtése
+      const tokens = s.replace(/[.,;:!?]+/g, ' ').trim().split(/\s+/);
+      const usedIndices = new Set();
+      const parsedCounts = {};
 
-      const cleanFaj = s
-        .replace(/\d+/g, ' ')
-        .replace(/\b(példány|pld|db|darab|hím|hímek|tojó|tojók|öreg|fiatal|fióka)\b/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      for (let i = 0; i < tokens.length; i++) {
+        if (/^\d+$/.test(tokens[i])) {
+          const numVal = parseInt(tokens[i], 10);
+          usedIndices.add(i);
 
+          const nextCat = detectCategory(tokens[i + 1]);
+          const prevCat = detectCategory(tokens[i - 1]);
+
+          let targetField = 'v_pld';
+          if (nextCat) {
+            targetField = nextCat;
+            usedIndices.add(i + 1);
+          } else if (prevCat && !usedIndices.has(i - 1)) {
+            targetField = prevCat;
+            usedIndices.add(i - 1);
+          }
+
+          parsedCounts[targetField] = (parsedCounts[targetField] || 0) + numVal;
+        }
+      }
+
+      // Kategória szavak eltávolítása a maradék szavak közül is
+      const speciesWords = [];
+      for (let i = 0; i < tokens.length; i++) {
+        if (!usedIndices.has(i) && !detectCategory(tokens[i])) {
+          speciesWords.push(tokens[i]);
+        }
+      }
+
+      // 5. Felismert mennyiségek beírása a validáló mezőkbe
+      Object.keys(parsedCounts).forEach(function(fieldId) {
+        document.getElementById(fieldId).value = parsedCounts[fieldId];
+      });
+
+      // 6. Fajnév azonosítása a maradék szavakból
+      const cleanFaj = speciesWords.join(' ').trim();
       const matchedSpecies = findBestMatchingSpecies(cleanFaj);
       if (matchedSpecies) {
         document.getElementById('voiceFajSelect').value = matchedSpecies;
@@ -714,15 +759,32 @@
 
     function validateVoiceData() {
       const f = document.getElementById('voiceFajSelect').value;
-      const c = document.getElementById('voiceCountInput').value.trim();
-      const cat = document.getElementById('voiceCatSelect').value;
-
       if (!f || !FAJOK.includes(f)) {
         alert("Válassz egy fajt a listából a jóváhagyáshoz!");
         return;
       }
-      if (!c || parseInt(c, 10) <= 0) {
-        alert("Add meg az egyedszámot a jóváhagyáshoz!");
+
+      const mapFields = [
+        { vId: 'v_pld', key: 'pld' },
+        { vId: 'v_him', key: 'him' },
+        { vId: 'v_tojo', key: 'tojo' },
+        { vId: 'v_ad', key: 'ad' },
+        { vId: 'v_juv', key: 'juv' },
+        { vId: 'v_imm', key: 'imm' },
+        { vId: 'v_pull', key: 'pull' }
+      ];
+
+      let hasAnyValidNum = false;
+      mapFields.forEach(function(m) {
+        const valStr = document.getElementById(m.vId).value.trim();
+        const num = parseInt(valStr, 10);
+        if (!isNaN(num) && num > 0) {
+          hasAnyValidNum = true;
+        }
+      });
+
+      if (!hasAnyValidNum) {
+        alert("Adj meg legalább egy egyedszámot a jóváhagyáshoz!");
         return;
       }
 
@@ -733,7 +795,13 @@
         speciesRows[activeRowIndex].faj = f;
       }
 
-      speciesRows[activeRowIndex][cat] = String(parseInt(c, 10));
+      // Összes mennyiségi kategória átmásolása a fajsorba
+      mapFields.forEach(function(m) {
+        const valStr = document.getElementById(m.vId).value.trim();
+        const num = parseInt(valStr, 10);
+        speciesRows[activeRowIndex][m.key] = (!isNaN(num) && num > 0) ? String(num) : "";
+      });
+
       recalcRowSum(activeRowIndex);
 
       if (activeRowIndex === 0) {
