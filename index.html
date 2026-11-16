@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Madár Adatrögzítő</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon2.png">
   <meta name="theme-color" content="#1e293b">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
@@ -21,9 +22,11 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 90px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .header h1 { font-size: 1.2rem; font-weight: 700; }
-    .btn-help-top { background: var(--border); color: var(--text); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 6px; }
+    .header h1 { font-size: 1.15rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 6px; }
+    .btn-help-top { background: var(--border); color: var(--text); border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    .btn-install-top { background: var(--success); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: none; }
 
     .sync-warning {
       background: rgba(217, 119, 6, 0.25);
@@ -155,7 +158,10 @@
 
   <div class="header">
     <h1>Madár Adatrögzítő</h1>
-    <button type="button" class="btn-help-top" onclick="alertFullHelp()">📖 Útmutató</button>
+    <div class="header-actions">
+      <button type="button" id="btnInstallApp" class="btn-install-top" onclick="installPWA()">📲 Telepítés</button>
+      <button type="button" class="btn-help-top" onclick="alertFullHelp()">📖 Útmutató</button>
+    </div>
   </div>
 
   <div id="syncWarning" class="sync-warning">
@@ -291,7 +297,38 @@
   <!-- 2. FŐ ALKALMAZÁS LOGIKA -->
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_KEY = "madar_piszkozat_v14";
+    const DRAFT_KEY = "madar_piszkozat_v15";
+
+    // PWA telepítő gomb kezelése
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnInstallApp');
+      if (btn) btn.style.display = 'inline-block';
+    });
+
+    // iPhone-on is látszódjon a telepítési útmutató gomb, ha még nincs telepítve
+    (function() {
+      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isIos && !isStandalone) {
+        const btn = document.getElementById('btnInstallApp');
+        if (btn) btn.style.display = 'inline-block';
+      }
+    })();
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() {
+          deferredPrompt = null;
+          document.getElementById('btnInstallApp').style.display = 'none';
+        });
+      } else {
+        alert("TELEPÍTÉS TELEFONRA:\n\n• Android (Chrome): Koppints a jobb felső sarokban a három pontra (⋮) → 'Alkalmazás telepítése' vagy 'Hozzáadás a kezdőképernyőhöz'.\n\n• iPhone (Safari): Koppints alul a Megosztás ikonra (négyzet felfelé nyíllal) → 'Főképernyőhöz adás'.");
+      }
+    }
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
@@ -666,20 +703,16 @@
       return "";
     }
 
-    // Többszörös mennyiség + kategória (ad, juv, imm, pull, hím, tojó, pld) feldolgozása
     function parseVoiceResult(raw) {
-      // Előző mezők nullázása
       ['v_pld', 'v_him', 'v_tojo', 'v_ad', 'v_juv', 'v_imm', 'v_pull'].forEach(function(id) {
         document.getElementById(id).value = '';
       });
 
       let s = raw.toLowerCase();
 
-      // 1. Számok és betűk szétválasztása, ha egybeírta a beszédfelismerő (pl. "rétisas2ad" -> "rétisas 2 ad")
       s = s.replace(/([a-záéíóöőúüű])(\d)/gi, '$1 $2');
       s = s.replace(/(\d)([a-záéíóöőúüű])/gi, '$1 $2');
 
-      // 2. Magyar számnevek átalakítása számjegyekké
       const wordsToNum = {
         "egy":"1", "kettő":"2", "két":"2", "három":"3", "négy":"4",
         "öt":"5", "hat":"6", "hét":"7", "nyolc":"8", "kilenc":"9", "tíz":"10",
@@ -691,7 +724,6 @@
         s = s.replace(new RegExp("\\b" + w + "\\b", "g"), wordsToNum[w]);
       });
 
-      // 3. Kategória szinonimák egységesítése
       const catPatterns = [
         { key: 'v_him', regex: /^(hím|hímek|hímet)$/ },
         { key: 'v_tojo', regex: /^(tojó|tojók|tojót|nőstény|nőstények)$/ },
@@ -710,7 +742,6 @@
         return null;
       }
 
-      // 4. Tokenizálás és "szám + kategória" vagy "kategória + szám" párok kigyűjtése
       const tokens = s.replace(/[.,;:!?]+/g, ' ').trim().split(/\s+/);
       const usedIndices = new Set();
       const parsedCounts = {};
@@ -736,7 +767,6 @@
         }
       }
 
-      // Kategória szavak eltávolítása a maradék szavak közül is
       const speciesWords = [];
       for (let i = 0; i < tokens.length; i++) {
         if (!usedIndices.has(i) && !detectCategory(tokens[i])) {
@@ -744,12 +774,10 @@
         }
       }
 
-      // 5. Felismert mennyiségek beírása a validáló mezőkbe
       Object.keys(parsedCounts).forEach(function(fieldId) {
         document.getElementById(fieldId).value = parsedCounts[fieldId];
       });
 
-      // 6. Fajnév azonosítása a maradék szavakból
       const cleanFaj = speciesWords.join(' ').trim();
       const matchedSpecies = findBestMatchingSpecies(cleanFaj);
       if (matchedSpecies) {
@@ -795,7 +823,6 @@
         speciesRows[activeRowIndex].faj = f;
       }
 
-      // Összes mennyiségi kategória átmásolása a fajsorba
       mapFields.forEach(function(m) {
         const valStr = document.getElementById(m.vId).value.trim();
         const num = parseInt(valStr, 10);
