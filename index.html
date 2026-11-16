@@ -123,11 +123,7 @@
       background: var(--card); border: 2px solid var(--primary); border-radius: 12px;
       padding: 18px; margin: auto; width: 100%; max-width: 420px;
     }
-    .voice-msg { text-align: center; font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; color: #fbbf24; }
-    .voice-heard {
-      background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 8px;
-      text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;
-    }
+    .voice-msg { text-align: center; font-weight: 700; font-size: 0.92rem; margin-bottom: 10px; color: #fbbf24; line-height: 1.35; }
     .voice-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -169,7 +165,7 @@
       <span>Időpont (ÉÉÉÉ.HH.NN) *</span>
       <button type="button" class="btn-q" onclick="alertHelp('Időpont')">?</button>
     </div>
-    <input type="text" id="entryDate" placeholder="pl. 2026.11.16" oninput="saveDraft()">
+    <input type="text" id="entryDate" placeholder="ÉÉÉÉ.HH.NN" oninput="saveDraft()">
 
     <div class="grid-2">
       <div>
@@ -190,37 +186,14 @@
     </div>
   </div>
 
-  <!-- 2. Megfigyelt fajok listája (egymás alatt gyűlnek a mentésig) -->
+  <!-- 2. Megfigyelt fajok listája -->
   <div class="card">
     <div class="label-row" style="margin-bottom: 8px;">
       <span>Megfigyelt fajok és mennyiségek *</span>
       <button type="button" class="btn-q" onclick="alertHelp('Faj')">?</button>
     </div>
 
-    <div id="speciesRowsContainer">
-      <!-- Fixen beépített 1. sor, hogy azonnal látszódjon a Hang gomb is -->
-      <div class="species-block">
-        <div class="species-block-header"><span>#1. Megfigyelt faj</span></div>
-        <div class="faj-row">
-          <div class="faj-trigger placeholder" onclick="openFajModal(0)">
-            <span>Faj kiválasztása...</span><span>🔍</span>
-          </div>
-          <button type="button" class="btn-voice" onclick="openVoiceModal(0)">🎤 Hang</button>
-        </div>
-        <div class="grid-num">
-          <div class="num-col"><label>pld.</label><input type="number" min="0" oninput="onStaticInput(0, 'pld', this.value)"></div>
-          <div class="num-col"><label>Hím</label><input type="number" min="0" oninput="onStaticInput(0, 'him', this.value)"></div>
-          <div class="num-col"><label>Tojó</label><input type="number" min="0" oninput="onStaticInput(0, 'tojo', this.value)"></div>
-          <div class="num-col"><label>Ad</label><input type="number" min="0" oninput="onStaticInput(0, 'ad', this.value)"></div>
-        </div>
-        <div class="grid-num" style="margin-top: 6px;">
-          <div class="num-col"><label>Juv</label><input type="number" min="0" oninput="onStaticInput(0, 'juv', this.value)"></div>
-          <div class="num-col"><label>Imm</label><input type="number" min="0" oninput="onStaticInput(0, 'imm', this.value)"></div>
-          <div class="num-col"><label>Pull</label><input type="number" min="0" oninput="onStaticInput(0, 'pull', this.value)"></div>
-          <div class="num-col"><label>Össz</label><input type="number" id="row_0_ossz" readonly style="background:#1e293b; border-color:#475569;"></div>
-        </div>
-      </div>
-    </div>
+    <div id="speciesRowsContainer"></div>
 
     <button type="button" class="btn-add-species" onclick="addNewSpeciesRow()">+ Új faj sor hozzáadása</button>
   </div>
@@ -271,7 +244,9 @@
   <div id="voiceModal" class="modal-overlay">
     <div class="voice-box">
       <div class="voice-msg" id="voiceMsg">🎙️ Mondd a fajt és a számot (pl. „Kanalas réce 12”)</div>
-      <div class="voice-heard" id="voiceHeard">Várakozás a beszédre...</div>
+
+      <div class="voice-label">Diktált vagy beírt szöveg (telefon billentyűzet mikrofonnal is használható):</div>
+      <input type="text" id="voiceRawInput" placeholder="pl. kanalas réce 12" oninput="parseVoiceResult(this.value)">
 
       <div class="voice-label">Faj (csak a listából):</div>
       <select id="voiceFajSelect"></select>
@@ -297,15 +272,27 @@
 
       <div style="display: flex; gap: 8px;">
         <button type="button" class="btn" style="background: var(--border);" onclick="closeVoiceModal()">Mégse</button>
-        <button type="button" class="btn" style="background: var(--warn);" onclick="startListening()">🔄 Újra</button>
+        <button type="button" class="btn" style="background: var(--warn);" onclick="startListening()">🎤 Újra</button>
         <button type="button" class="btn btn-sync" onclick="validateVoiceData()">✅ Jóváhagyás</button>
       </div>
     </div>
   </div>
 
+  <!-- 1. KÜLÖNÁLLÓ BLOKK: Garantált automata dátumbeírás -->
+  <script>
+    (function() {
+      var today = new Date();
+      var y = today.getFullYear();
+      var m = String(today.getMonth() + 1).padStart(2, '0');
+      var d = String(today.getDate()).padStart(2, '0');
+      document.getElementById('entryDate').value = y + "." + m + "." + d;
+    })();
+  </script>
+
+  <!-- 2. FŐ ALKALMAZÁS LOGIKA -->
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_KEY = "madar_piszkozat_v9";
+    const DRAFT_KEY = "madar_piszkozat_v10";
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
@@ -326,4 +313,599 @@
     }
 
     let speciesRows = [createEmptySpeciesRow()];
-    let activeRowIndex =
+    let activeRowIndex = 0;
+
+    function renderSpeciesRows() {
+      const container = document.getElementById('speciesRowsContainer');
+      container.innerHTML = '';
+
+      speciesRows.forEach(function(row, idx) {
+        const block = document.createElement('div');
+        block.className = 'species-block';
+
+        const header = document.createElement('div');
+        header.className = 'species-block-header';
+        header.innerHTML = '<span>#' + (idx + 1) + '. Megfigyelt faj</span>';
+
+        if (speciesRows.length > 1) {
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn-del-row';
+          delBtn.innerText = '✕ Törlés';
+          delBtn.onclick = function() { removeSpeciesRow(idx); };
+          header.appendChild(delBtn);
+        }
+        block.appendChild(header);
+
+        const fajRow = document.createElement('div');
+        fajRow.className = 'faj-row';
+
+        const trigger = document.createElement('div');
+        trigger.className = row.faj ? 'faj-trigger' : 'faj-trigger placeholder';
+        trigger.innerHTML = '<span>' + (row.faj || 'Faj kiválasztása...') + '</span><span>🔍</span>';
+        trigger.onclick = function() { openFajModal(idx); };
+
+        const voiceBtn = document.createElement('button');
+        voiceBtn.type = 'button';
+        voiceBtn.className = 'btn-voice';
+        voiceBtn.innerHTML = '🎤 Hang';
+        voiceBtn.onclick = function() { openVoiceModal(idx); };
+
+        fajRow.appendChild(trigger);
+        fajRow.appendChild(voiceBtn);
+        block.appendChild(fajRow);
+
+        const cats1 = [
+          { key: 'pld', label: 'pld.' },
+          { key: 'him', label: 'Hím' },
+          { key: 'tojo', label: 'Tojó' },
+          { key: 'ad', label: 'Ad' }
+        ];
+        const cats2 = [
+          { key: 'juv', label: 'Juv' },
+          { key: 'imm', label: 'Imm' },
+          { key: 'pull', label: 'Pull' },
+          { key: 'ossz', label: 'Össz', readonly: true }
+        ];
+
+        block.appendChild(buildNumGrid(idx, cats1, row));
+        const g2 = buildNumGrid(idx, cats2, row);
+        g2.style.marginTop = '6px';
+        block.appendChild(g2);
+
+        container.appendChild(block);
+      });
+    }
+
+    function buildNumGrid(rowIdx, fields, rowData) {
+      const grid = document.createElement('div');
+      grid.className = 'grid-num';
+
+      fields.forEach(function(f) {
+        const col = document.createElement('div');
+        col.className = 'num-col';
+
+        const lbl = document.createElement('label');
+        lbl.innerText = f.label;
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.min = '0';
+        inp.value = rowData[f.key] !== "" ? rowData[f.key] : "";
+        inp.id = 'row_' + rowIdx + '_' + f.key;
+
+        if (f.readonly) {
+          inp.readOnly = true;
+          inp.style.background = '#1e293b';
+          inp.style.borderColor = '#475569';
+        } else {
+          inp.oninput = function() {
+            speciesRows[rowIdx][f.key] = inp.value;
+            recalcRowSum(rowIdx);
+            saveDraft();
+          };
+        }
+
+        col.appendChild(lbl);
+        col.appendChild(inp);
+        grid.appendChild(col);
+      });
+
+      return grid;
+    }
+
+    function recalcRowSum(rowIdx) {
+      const r = speciesRows[rowIdx];
+      const keys = ['pld', 'him', 'tojo', 'ad', 'juv', 'imm', 'pull'];
+      let sum = 0;
+      let hasAny = false;
+      keys.forEach(function(k) {
+        const v = parseInt(r[k], 10);
+        if (!isNaN(v)) {
+          sum += v;
+          hasAny = true;
+        }
+      });
+      r.ossz = hasAny ? String(sum) : "";
+      const osszEl = document.getElementById('row_' + rowIdx + '_ossz');
+      if (osszEl) osszEl.value = r.ossz;
+    }
+
+    function addNewSpeciesRow() {
+      speciesRows.push(createEmptySpeciesRow());
+      renderSpeciesRows();
+      saveDraft();
+    }
+
+    function removeSpeciesRow(idx) {
+      if (speciesRows.length <= 1) return;
+      speciesRows.splice(idx, 1);
+      renderSpeciesRows();
+      saveDraft();
+    }
+
+    function saveDraft() {
+      const obsValues = Array.from(document.querySelectorAll('.obs-input')).map(function(i) { return i.value; });
+      const data = {
+        date: document.getElementById('entryDate').value,
+        terulet: document.getElementById('entryTerulet').value,
+        korzet: document.getElementById('entryKorzet').value,
+        speciesRows: speciesRows,
+        obs: obsValues,
+        megj: document.getElementById('txtMegjegyzes').value
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      } catch (e) {}
+    }
+
+    function initApp() {
+      try {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const d = JSON.parse(saved);
+          if (d.date && d.date.trim() !== "") {
+            document.getElementById('entryDate').value = d.date;
+          }
+          if (d.terulet) document.getElementById('entryTerulet').value = d.terulet;
+          if (d.korzet) document.getElementById('entryKorzet').value = d.korzet;
+          if (d.speciesRows && d.speciesRows.length > 0) {
+            speciesRows = d.speciesRows;
+          }
+          document.getElementById('txtMegjegyzes').value = d.megj || "";
+
+          if (d.obs && d.obs.length > 0) {
+            const container = document.getElementById('observerContainer');
+            container.innerHTML = '';
+            d.obs.forEach(function(val, i) {
+              const inp = document.createElement('input');
+              inp.type = "text";
+              inp.className = "obs-input uppercase";
+              inp.setAttribute("list", "obsList");
+              inp.placeholder = i === 0 ? "MEGFIGYELŐ 1 * (ELSŐDLEGES)" : "MEGFIGYELŐ " + (i + 1);
+              inp.value = val;
+              inp.oninput = saveDraft;
+              container.appendChild(inp);
+            });
+          }
+        }
+      } catch (e) {}
+
+      renderSpeciesRows();
+    }
+
+    function openFajModal(rowIdx) {
+      activeRowIndex = rowIdx;
+      document.getElementById('fajModal').style.display = 'flex';
+      document.getElementById('fajModalSearch').value = '';
+      renderModalList();
+      setTimeout(function() { document.getElementById('fajModalSearch').focus(); }, 100);
+    }
+
+    function closeFajModal() {
+      document.getElementById('fajModal').style.display = 'none';
+    }
+
+    function renderModalList() {
+      const q = document.getElementById('fajModalSearch').value.toLowerCase().trim();
+      const listEl = document.getElementById('fajModalList');
+      listEl.innerHTML = '';
+
+      const talalatok = q === '' ? FAJOK : FAJOK.filter(function(f) { return f.toLowerCase().includes(q); });
+
+      talalatok.forEach(function(faj) {
+        const row = document.createElement('div');
+        row.className = 'faj-modal-item';
+        row.innerText = faj;
+        row.onclick = function() { selectFajForRow(activeRowIndex, faj); };
+        listEl.appendChild(row);
+      });
+    }
+
+    function selectFajForRow(rowIdx, faj) {
+      if (!FAJOK.includes(faj)) return;
+      if (faj === "Egyéb nem meghatározott") {
+        const res = prompt("Add meg a faj nevét / leírását:");
+        speciesRows[rowIdx].faj = res && res.trim() ? "EGYÉB: " + res.trim().toUpperCase() : "EGYÉB NEM MEGHATÁROZOTT";
+      } else {
+        speciesRows[rowIdx].faj = faj;
+      }
+      renderSpeciesRows();
+      saveDraft();
+      closeFajModal();
+    }
+
+    let rec = null;
+
+    function openVoiceModal(rowIdx) {
+      activeRowIndex = rowIdx;
+      const sel = document.getElementById('voiceFajSelect');
+      sel.innerHTML = '<option value="">-- Válassz fajt a listából --</option>';
+      FAJOK.forEach(function(f) {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.innerText = f;
+        sel.appendChild(opt);
+      });
+      document.getElementById('voiceRawInput').value = '';
+      document.getElementById('voiceCountInput').value = '';
+      document.getElementById('voiceCatSelect').value = 'pld';
+      document.getElementById('voiceModal').style.display = 'flex';
+      startListening();
+    }
+
+    function closeVoiceModal() {
+      if (rec) {
+        try { rec.stop(); } catch (e) {}
+      }
+      document.getElementById('voiceModal').style.display = 'none';
+    }
+
+    function startListening() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        document.getElementById('voiceMsg').innerText = "Koppints az alsó szövegmezőbe, és használd a telefon billentyűzetének mikrofonját!";
+        document.getElementById('voiceRawInput').focus();
+        return;
+      }
+
+      if (rec) {
+        try { rec.abort(); } catch (e) {}
+      }
+
+      document.getElementById('voiceMsg').innerText = "🔴 Hallgatlak! Mondd a fajt és a számot (pl. „Kanalas réce 12”)...";
+
+      rec = new SpeechRec();
+      rec.lang = 'hu-HU';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+
+      rec.onresult = function(e) {
+        const text = e.results[0][0].transcript;
+        document.getElementById('voiceRawInput').value = text;
+        parseVoiceResult(text);
+        document.getElementById('voiceMsg').innerText = "✅ Ellenőrizd az adatokat, majd nyomj a Jóváhagyásra!";
+      };
+
+      rec.onerror = function(e) {
+        document.getElementById('voiceMsg').innerText = "Mikrofon hiba (" + e.error + "). Koppints az alábbi mezőbe, és diktálj a telefon billentyűzetével!";
+        document.getElementById('voiceRawInput').focus();
+      };
+
+      try {
+        rec.start();
+      } catch (e) {
+        document.getElementById('voiceMsg').innerText = "Koppints az alábbi mezőbe, és diktálj a telefon billentyűzetével!";
+        document.getElementById('voiceRawInput').focus();
+      }
+    }
+
+    function parseVoiceResult(raw) {
+      let s = raw.toLowerCase();
+      const wordsToNum = {
+        "egy":"1", "kettő":"2", "két":"2", "három":"3", "négy":"4",
+        "öt":"5", "hat":"6", "hét":"7", "nyolc":"8", "kilenc":"9", "tíz":"10"
+      };
+      Object.keys(wordsToNum).forEach(function(w) {
+        s = s.replace(new RegExp("\\b" + w + "\\b", "g"), wordsToNum[w]);
+      });
+
+      const numMatch = s.match(/(\d+)/);
+      if (numMatch) {
+        document.getElementById('voiceCountInput').value = numMatch[1];
+      }
+
+      if (s.includes("hím")) document.getElementById('voiceCatSelect').value = "him";
+      else if (s.includes("tojó")) document.getElementById('voiceCatSelect').value = "tojo";
+      else if (s.includes("öreg")) document.getElementById('voiceCatSelect').value = "ad";
+      else if (s.includes("fiatal")) document.getElementById('voiceCatSelect').value = "juv";
+      else if (s.includes("fióka")) document.getElementById('voiceCatSelect').value = "pull";
+      else document.getElementById('voiceCatSelect').value = "pld";
+
+      const cleanFaj = s.replace(/\d+/g, '').replace(/\b(példány|pld|db|darab|hím|tojó|öreg|fiatal|fióka)\b/g, '').trim();
+      if (cleanFaj) {
+        const found = FAJOK.find(function(f) {
+          return f.toLowerCase().includes(cleanFaj) || cleanFaj.includes(f.toLowerCase());
+        });
+        if (found) {
+          document.getElementById('voiceFajSelect').value = found;
+        }
+      }
+    }
+
+    function validateVoiceData() {
+      const f = document.getElementById('voiceFajSelect').value;
+      const c = document.getElementById('voiceCountInput').value.trim();
+      const cat = document.getElementById('voiceCatSelect').value;
+
+      if (!f || !FAJOK.includes(f)) {
+        alert("Válassz egy fajt a listából a jóváhagyáshoz!");
+        return;
+      }
+      if (!c || parseInt(c, 10) <= 0) {
+        alert("Add meg az egyedszámot a jóváhagyáshoz!");
+        return;
+      }
+
+      if (f === "Egyéb nem meghatározott") {
+        const res = prompt("Add meg a faj nevét / leírását:");
+        speciesRows[activeRowIndex].faj = res && res.trim() ? "EGYÉB: " + res.trim().toUpperCase() : "EGYÉB NEM MEGHATÁROZOTT";
+      } else {
+        speciesRows[activeRowIndex].faj = f;
+      }
+
+      speciesRows[activeRowIndex][cat] = String(parseInt(c, 10));
+      recalcRowSum(activeRowIndex);
+
+      if (activeRowIndex === speciesRows.length - 1) {
+        speciesRows.push(createEmptySpeciesRow());
+      }
+
+      renderSpeciesRows();
+      saveDraft();
+      closeVoiceModal();
+    }
+
+    let db;
+    const request = indexedDB.open("MadarAppDB", 1);
+    request.onupgradeneeded = function(e) {
+      db = e.target.result;
+      db.createObjectStore("megfigyelesek", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = function(e) {
+      db = e.target.result;
+      updateStatusBadge();
+      populateDatalists();
+    };
+
+    function addObserverField() {
+      const container = document.getElementById('observerContainer');
+      const count = container.querySelectorAll('input').length + 1;
+      const inp = document.createElement('input');
+      inp.type = "text";
+      inp.className = "obs-input uppercase";
+      inp.setAttribute("list", "obsList");
+      inp.placeholder = "MEGFIGYELŐ " + count;
+      inp.oninput = saveDraft;
+      container.appendChild(inp);
+      saveDraft();
+    }
+
+    function saveAllRecords() {
+      const datum = document.getElementById('entryDate').value.trim();
+      const terulet = document.getElementById('entryTerulet').value.trim().toUpperCase();
+      const korzet = document.getElementById('entryKorzet').value.trim().toUpperCase();
+      const obsInputs = document.querySelectorAll('.obs-input');
+      const megfigyelo1 = obsInputs[0].value.trim().toUpperCase();
+      const megj = document.getElementById('txtMegjegyzes').value.trim();
+
+      if (!datum || !terulet || !megfigyelo1) {
+        alert("Az Időpont, Terület és Megfigyelő 1 kitöltése kötelező!");
+        return;
+      }
+
+      const kitoltottSorok = [];
+      for (let i = 0; i < speciesRows.length; i++) {
+        const r = speciesRows[i];
+        const hasAnyNum = ['pld', 'him', 'tojo', 'ad', 'juv', 'imm', 'pull'].some(function(k) {
+          return r[k] !== "" && !isNaN(parseInt(r[k], 10));
+        });
+
+        if (!r.faj && !hasAnyNum) continue;
+
+        if (!r.faj) {
+          alert("A #" + (i + 1) + ". sornál nincs kiválasztva faj!");
+          return;
+        }
+        if (!hasAnyNum) {
+          alert("A #" + (i + 1) + ". sornál (" + r.faj + ") nincs megadva mennyiség!");
+          return;
+        }
+
+        kitoltottSorok.push(r);
+      }
+
+      if (kitoltottSorok.length === 0) {
+        alert("Legalább egy fajt és mennyiséget rögzíts a mentés előtt!");
+        return;
+      }
+
+      const tx = db.transaction("megfigyelesek", "readwrite");
+      const store = tx.objectStore("megfigyelesek");
+
+      kitoltottSorok.forEach(function(r) {
+        const toIntOrEmpty = function(val) {
+          const n = parseInt(val, 10);
+          return isNaN(n) ? "" : n;
+        };
+
+        const record = {
+          "Időpont": datum,
+          "Terület": terulet,
+          "Körzet": korzet,
+          "Faj": r.faj,
+          "pld.": toIntOrEmpty(r.pld),
+          "Hím": toIntOrEmpty(r.him),
+          "Tojó": toIntOrEmpty(r.tojo),
+          "Ad": toIntOrEmpty(r.ad),
+          "Juv": toIntOrEmpty(r.juv),
+          "Imm": toIntOrEmpty(r.imm),
+          "Pull": toIntOrEmpty(r.pull),
+          "Össz": toIntOrEmpty(r.ossz),
+          "Megfigyelő 1": megfigyelo1,
+          "Megjegyzés": megj,
+          "Feltoltve": false
+        };
+
+        obsInputs.forEach(function(inp, idx) {
+          if (idx > 0) {
+            const val = inp.value.trim().toUpperCase();
+            if (val) record["Megfigyelő " + (idx + 1)] = val;
+          }
+        });
+
+        store.add(record);
+      });
+
+      tx.oncomplete = function() {
+        alert(kitoltottSorok.length + " megfigyelt faj elmentve a telefonra! Új adatlap megnyitva.");
+        speciesRows = [createEmptySpeciesRow()];
+        renderSpeciesRows();
+        document.getElementById('txtMegjegyzes').value = '';
+        saveDraft();
+        updateStatusBadge();
+        populateDatalists();
+      };
+    }
+
+    function updateStatusBadge() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = function() {
+        const all = req.result;
+        const unsynced = all.filter(function(r) { return !r.Feltoltve; }).length;
+        document.getElementById('localStatus').innerText = "Helyben mentett: " + all.length + " sor (Feltöltendő: " + unsynced + ")";
+
+        const warnBox = document.getElementById('syncWarning');
+        if (unsynced > 0) {
+          document.getElementById('syncWarningCount').innerText = unsynced + " db";
+          warnBox.style.display = 'flex';
+        } else {
+          warnBox.style.display = 'none';
+        }
+      };
+    }
+
+    function populateDatalists() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = function() {
+        const all = req.result;
+        const teruletek = new Set();
+        const megfigyelok = new Set();
+
+        all.forEach(function(r) {
+          if (r["Terület"]) teruletek.add(r["Terület"]);
+          Object.keys(r).forEach(function(k) {
+            if (k.startsWith("Megfigyelő") && r[k]) megfigyelok.add(r[k]);
+          });
+        });
+
+        const dlTer = document.getElementById('teruletList');
+        dlTer.innerHTML = '';
+        teruletek.forEach(function(t) {
+          const opt = document.createElement('option');
+          opt.value = t;
+          dlTer.appendChild(opt);
+        });
+
+        const dlObs = document.getElementById('obsList');
+        dlObs.innerHTML = '';
+        megfigyelok.forEach(function(m) {
+          const opt = document.createElement('option');
+          opt.value = m;
+          dlObs.appendChild(opt);
+        });
+      };
+    }
+
+    async function syncCloud() {
+      if (!navigator.onLine) {
+        alert("Nincs internetkapcsolat!");
+        return;
+      }
+
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+
+      req.onsuccess = async function() {
+        const unsynced = req.result.filter(function(r) { return !r.Feltoltve; });
+        if (unsynced.length === 0) {
+          alert("Minden adat fel van töltve!");
+          return;
+        }
+
+        try {
+          await fetch(FELHO_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uj_megfigyelesek: unsynced })
+          });
+
+          const writeTx = db.transaction("megfigyelesek", "readwrite");
+          const writeStore = writeTx.objectStore("megfigyelesek");
+          unsynced.forEach(function(rec) {
+            rec.Feltoltve = true;
+            writeStore.put(rec);
+          });
+
+          writeTx.oncomplete = function() {
+            alert(unsynced.length + " rekord sikeresen elküldve a Google Táblázatba!");
+            updateStatusBadge();
+          };
+        } catch (err) {
+          alert("Feltöltési hiba: " + err.message);
+        }
+      };
+    }
+
+    function exportToExcel() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = function() {
+        const data = req.result;
+        if (data.length === 0) {
+          alert("Nincs mentett adat!");
+          return;
+        }
+        const cleanData = data.map(function(item) {
+          const copy = Object.assign({}, item);
+          delete copy.id;
+          return copy;
+        });
+
+        const ws = XLSX.utils.json_to_sheet(cleanData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Megfigyelesek");
+        XLSX.writeFile(wb, "madarmegfigyelesek_mobil.xlsx");
+      };
+    }
+
+    function alertHelp(key) { alert(SUGO[key] || "Nincs leírás."); }
+    function alertFullHelp() {
+      alert(Object.entries(SUGO).map(function(entry) { return "• " + entry[0].toUpperCase() + ":\n" + entry[1]; }).join("\n\n"));
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
