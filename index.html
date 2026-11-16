@@ -2,714 +2,799 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <title>Madártani Adatrögzítő</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#1e1e1e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MadárApp">
-  
-  <link rel="manifest" href="./manifest.json?v=101">
-  <link rel="apple-touch-icon" href="./icon2.png?v=101">
-  <link rel="icon" type="image/png" sizes="512x512" href="./icon2.png?v=101">
-  <link rel="shortcut icon" href="./icon2.png?v=101">
-
+  <title>Madár Adatrögzítő</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warn: #d97706;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #1e1e1e; color: #fff; padding: 12px; padding-bottom: 110px; }
+    body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 90px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .header h1 { font-size: 1.2rem; font-weight: 700; }
+    .btn-help-top { background: var(--border); color: var(--text); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
     
-    #offline-banner {
-      display: none; background: #d35400; color: white; padding: 10px 14px;
-      border-radius: 8px; margin-bottom: 12px; font-size: 0.88rem; font-weight: bold;
-      justify-content: space-between; align-items: center;
-    }
-    #btn-sync-offline {
-      background: #fff; color: #d35400; border: none; padding: 5px 10px;
-      border-radius: 5px; font-weight: bold; font-size: 0.8rem; cursor: pointer;
-    }
-
-    .card { background: #2b2b2b; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-    label { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; display: block; color: #bbb; }
-    input { width: 100%; background: #3a3a3a; color: #fff; border: 1px solid #555; border-radius: 5px; padding: 8px; font-size: 0.95rem; margin-bottom: 8px; outline: none; }
-    input:focus { border-color: #1f6aa5; }
-    .row { display: flex; gap: 8px; }
-    .col { flex: 1; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+    .label-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; }
+    .btn-q { background: #475569; color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 0.75rem; margin-left: 6px; cursor: pointer; }
     
-    /* Hangvezérlés stílusok */
-    .voice-control-box {
-      background: #232d36; border: 2px dashed #007acc; border-radius: 8px; padding: 10px;
-      margin-bottom: 12px; text-align: center;
+    .input-with-mic { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .input-with-mic input, .input-with-mic textarea { margin-bottom: 0; flex: 1; }
+    .btn-mic {
+      background: #334155; border: 1px solid #475569; color: #fff; border-radius: 6px;
+      width: 44px; height: 44px; font-size: 1.2rem; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; flex-shrink: 0;
     }
-    .btn-mic-main {
-      background: #007acc; color: white; border: none; border-radius: 50px;
-      padding: 10px 20px; font-size: 0.95rem; font-weight: bold; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn-mic-main.listening {
-      background: #c0392b; animation: pulse 1.2s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
-      70% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
-    }
-    .voice-hint { font-size: 0.75rem; color: #95a5a6; margin-top: 6px; }
+    .btn-mic:active { background: var(--primary); }
 
-    .faj-box { background: #333; border: 1px solid #555; border-radius: 6px; padding: 10px; margin-bottom: 10px; }
-    .faj-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .faj-actions { display: flex; gap: 6px; }
-    .btn-del { background: #a93226; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-    .btn-mic-item { background: #2c3e50; color: white; border: 1px solid #7f8c8d; border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; }
-    .btn-mic-item.listening { background: #c0392b; }
+    input, textarea {
+      width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 11px;
+      color: var(--text); font-size: 0.95rem; outline: none; margin-bottom: 8px;
+    }
+    input:focus, textarea:focus { border-color: var(--primary); }
+    .uppercase { text-transform: uppercase; }
 
-    .qty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-    .qty-item { text-align: center; }
-    .qty-item span { font-size: 0.7rem; color: #aaa; }
-    .qty-item input { text-align: center; padding: 6px 2px; margin-bottom: 0; font-size: 0.95rem; }
-    .qty-item.total input { background: #223; color: #5dade2; font-weight: bold; }
+    /* Csak listából választható faj mező */
+    .faj-trigger {
+      width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+      color: var(--text); font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 8px; min-height: 44px;
+    }
+    .faj-trigger.placeholder { color: var(--text-muted); }
 
-    .btn-add { background: #1f6aa5; color: white; border: none; border-radius: 6px; padding: 10px; width: 100%; font-size: 0.95rem; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
+    /* Teljes képernyős ablakok (Modal) */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.98);
+      z-index: 2000; display: none; flex-direction: column; padding: 14px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; }
+    .btn-close { background: var(--danger); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+    .faj-modal-list { flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: #1e293b; }
+    .faj-modal-item {
+      padding: 14px; border-bottom: 1px solid var(--border); font-size: 1.05rem; cursor: pointer;
+    }
+    .faj-modal-item:active { background: var(--primary); }
+
+    /* Hangalapú bevitel jóváhagyó ablak */
+    .voice-box {
+      background: var(--card); border: 2px solid var(--primary); border-radius: 12px;
+      padding: 20px; margin: auto; width: 100%; max-width: 420px; text-align: center;
+    }
+    .voice-status { font-size: 0.9rem; color: var(--warn); font-weight: 700; margin-bottom: 12px; }
+    .voice-preview {
+      background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+      font-size: 1.15rem; font-weight: 700; min-height: 54px; margin-bottom: 16px; color: #fff;
+      word-break: break-word;
+    }
+    .voice-actions { display: flex; gap: 8px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-num { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .num-col { display: flex; flex-direction: column; align-items: center; }
+    .num-col label { font-size: 0.75rem; margin-bottom: 2px; color: var(--text-muted); }
+    .num-col input { text-align: center; margin-bottom: 0; padding: 10px 4px; }
     
-    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #111; padding: 10px; border-top: 1px solid #444; z-index: 10; display: flex; gap: 6px; }
-    .btn-action { flex: 1; border: none; border-radius: 6px; padding: 12px 2px; font-size: 0.8rem; font-weight: bold; cursor: pointer; text-align: center; }
-    .btn-csv { background: #007acc; color: white; }
-    .btn-offline { background: #e67e22; color: white; }
-    .btn-online { background: #28a745; color: white; }
+    .obs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .btn-small { background: var(--border); border: none; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+    
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+      padding: 10px 14px; display: flex; gap: 8px; z-index: 100;
+    }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.95rem; cursor: pointer; color: white; text-align: center; }
+    .btn-save { background: var(--primary); }
+    .btn-sync { background: var(--success); }
+    .btn-export { background: var(--border); font-size: 0.8rem; padding: 8px; }
+    .btn-retry { background: var(--warn); }
+    .btn-cancel { background: var(--border); }
+    
+    .status-badge { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .draft-indicator { font-size: 0.72rem; color: #38bdf8; text-align: right; margin-bottom: 6px; }
   </style>
 </head>
 <body>
 
-  <!-- OFFLINE SÁV -->
-  <div id="offline-banner">
-    <span id="offline-text">📦 0 offline felmérés várakozik</span>
-    <button id="btn-sync-offline" type="button" onclick="szinkronizalOfflineAdatok()">📤 Összes feltöltése</button>
+  <div class="header">
+    <h1>Madár Adatrögzítő</h1>
+    <button class="btn-help-top" onclick="alertFullHelp()">📖 Útmutató</button>
   </div>
 
-  <h3 style="text-align:center; margin-bottom: 12px;">🦅 Madártani Adatrögzítő</h3>
+  <div class="draft-indicator" id="draftStatus">Piszkozat automatikusan mentve</div>
 
-  <!-- HANGVEZÉRLŐ PANEL -->
-  <div class="voice-control-box">
-    <button type="button" id="btn-voice-main" class="btn-mic-main" onclick="toggleMainVoice()">
-      🎙️ <span>Beszédfelismerés indítása</span>
-    </button>
-    <div class="voice-hint">
-      Mondd be egyben: <em>„Fekete gólya kettő példány”</em> vagy <em>„Széncinege egy hím két tojó”</em>
-    </div>
-  </div>
-
-  <!-- KÖZÖS ADATOK -->
   <div class="card">
-    <label>Időpont (ÉÉÉÉ.HH.NN) *</label>
-    <input type="text" id="idopont" required>
+    <div class="label-row">
+      <span>Időpont (ÉÉÉÉ.HH.NN) *</span>
+      <button class="btn-q" onclick="alertHelp('Időpont')">?</button>
+    </div>
+    <input type="text" id="entryDate" placeholder="pl. 2026.11.16" oninput="saveDraft()">
 
-    <div class="row">
-      <div class="col">
-        <label>Terület *</label>
-        <input type="text" id="terulet" oninput="this.value = this.value.toUpperCase()" placeholder="UTM / NÉV..." required>
+    <div class="grid-2">
+      <div>
+        <div class="label-row">
+          <span>Terület *</span>
+          <button class="btn-q" onclick="alertHelp('Terület')">?</button>
+        </div>
+        <div class="input-with-mic">
+          <input type="text" id="entryTerulet" class="uppercase" list="teruletList" placeholder="KÖZSÉG / UTM" oninput="saveDraft()">
+          <button type="button" class="btn-mic" onclick="startVoiceInput('entryTerulet', true)" title="Hangbevitel">🎤</button>
+        </div>
+        <datalist id="teruletList"></datalist>
       </div>
-      <div class="col">
-        <label>Körzet</label>
-        <input type="text" id="korzet" oninput="this.value = this.value.toUpperCase()" placeholder="PL. HALASTÓ...">
+      <div>
+        <div class="label-row">
+          <span>Körzet</span>
+          <button class="btn-q" onclick="alertHelp('Körzet')">?</button>
+        </div>
+        <div class="input-with-mic">
+          <input type="text" id="entryKorzet" class="uppercase" placeholder="PL. HALASTÓ" oninput="saveDraft()">
+          <button type="button" class="btn-mic" onclick="startVoiceInput('entryKorzet', true)" title="Hangbevitel">🎤</button>
+        </div>
       </div>
     </div>
 
-    <label>Megfigyelő 1 *</label>
-    <input type="text" id="megf1" oninput="this.value = this.value.toUpperCase()" placeholder="ELSŐDLEGES MEGFIGYELŐ..." required>
+    <div class="label-row">
+      <span>Faj kiválasztása (csak listából) *</span>
+      <button class="btn-q" onclick="alertHelp('Faj')">?</button>
+    </div>
+    <div id="fajTrigger" class="faj-trigger placeholder" onclick="openFajModal()">
+      <span id="fajTriggerText">Érintsd meg a faj kiválasztásához...</span>
+      <span>🔍</span>
+    </div>
 
-    <div id="extra-megf"></div>
-    <button type="button" onclick="addMegfigyelo()" style="background:none; border:1px dashed #777; color:#ccc; width:100%; padding:6px; border-radius:4px; font-size:0.8rem; margin-top:2px;">+ További megfigyelő</button>
+    <div class="label-row" style="margin-top: 6px;">
+      <span>Mennyiségek (min. 1 kötelező) *</span>
+      <button class="btn-q" onclick="alertHelp('Mennyiségek')">?</button>
+    </div>
+    <div class="grid-num" style="margin-bottom: 6px;">
+      <div class="num-col"><label>pld.</label><input type="number" id="num_pld" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Hím</label><input type="number" id="num_him" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Tojó</label><input type="number" id="num_tojo" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Ad</label><input type="number" id="num_ad" min="0" oninput="onNumInput()"></div>
+    </div>
+    <div class="grid-num">
+      <div class="num-col"><label>Juv</label><input type="number" id="num_juv" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Imm</label><input type="number" id="num_imm" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Pull</label><input type="number" id="num_pull" min="0" oninput="onNumInput()"></div>
+      <div class="num-col"><label>Össz</label><input type="number" id="num_ossz" readonly style="background:#1e293b; border-color:#475569;"></div>
+    </div>
   </div>
 
-  <!-- FAJ GOMB -->
-  <button type="button" class="btn-add" onclick="addFaj()">✚ Új faj hozzáadása (Kézi rögzítés)</button>
+  <div class="card">
+    <div class="obs-header">
+      <div class="label-row" style="margin: 0;">
+        <span>Megfigyelők *</span>
+        <button class="btn-q" onclick="alertHelp('Megfigyelők')">?</button>
+      </div>
+      <button class="btn-small" onclick="addObserverField()">+ Megfigyelő</button>
+    </div>
+    <div id="observerContainer"></div>
+    <datalist id="obsList"></datalist>
 
-  <!-- FAJOK LISTÁJA -->
-  <div id="fajok-lista"></div>
+    <div class="label-row" style="margin-top: 8px;">
+      <span>Megjegyzés</span>
+      <button class="btn-q" onclick="alertHelp('Megjegyzés')">?</button>
+    </div>
+    <div class="input-with-mic">
+      <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..." oninput="saveDraft()"></textarea>
+      <button type="button" class="btn-mic" onclick="startVoiceInput('txtMegjegyzes', false)" title="Hangbevitel">🎤</button>
+    </div>
+  </div>
 
-  <!-- ALSÓ GOMBOK -->
-  <div class="footer-bar">
-    <button type="button" class="btn-action btn-csv" onclick="letoltesExcelbe()">📥 Letöltés CSV</button>
-    <button type="button" class="btn-action btn-offline" onclick="mentesOffline()">💾 Mentés Telefonra</button>
-    <button type="button" class="btn-action btn-online" onclick="mentesOnline()">☁️ Feltöltés Táblázatba</button>
+  <div class="card" style="text-align: center;">
+    <button class="btn btn-export" onclick="exportToExcel()">📥 Mentett adatok letöltése Excelként (.xlsx)</button>
+    <div class="status-badge" id="localStatus">Helyben mentett: 0 sor (Feltöltendő: 0)</div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-save" onclick="saveRecord()">💾 Mentés</button>
+    <button class="btn btn-sync" onclick="syncCloud()">☁️ Feltöltés</button>
+  </div>
+
+  <!-- Teljes képernyős Fajválasztó Modal -->
+  <div id="fajModal" class="modal-overlay">
+    <div class="modal-header">
+      <div class="modal-title">Faj kiválasztása a listából</div>
+      <button class="btn-close" onclick="closeFajModal()">Bezárás ✕</button>
+    </div>
+    <div class="input-with-mic">
+      <input type="text" id="fajModalSearch" placeholder="Gépelj vagy diktálj a szűréshez..." oninput="renderModalList()" autocomplete="off">
+      <button type="button" class="btn-mic" onclick="startVoiceInput('fajModalSearch', false, true)" title="Faj diktálása">🎤</button>
+    </div>
+    <div id="fajModalList" class="faj-modal-list"></div>
+  </div>
+
+  <!-- Hangalapú adatbevitel jóváhagyó ablak -->
+  <div id="voiceModal" class="modal-overlay">
+    <div class="voice-box">
+      <div class="voice-status" id="voiceStatus">🎙️ Hallgatlak... Mondd az adatot!</div>
+      <div class="voice-preview" id="voicePreview">...</div>
+      <div class="voice-actions">
+        <button type="button" class="btn btn-cancel" onclick="cancelVoice()">Mégse</button>
+        <button type="button" class="btn btn-retry" onclick="retryVoice()">🔄 Újra</button>
+        <button type="button" class="btn btn-sync" id="btnVoiceConfirm" onclick="confirmVoice()" disabled>✅ Jóváhagyás</button>
+      </div>
+    </div>
   </div>
 
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const STORAGE_KEY = "madar_offline_sorok";
+    const DRAFT_STORAGE_KEY = "madar_app_current_draft_v1";
 
-    const FAJOK_LISTA = [
-      "Álarcos réce", "Alka", "Amerikai pettyeslile", "Amuri vércse", "Apácahantmadár", "Apácalúd",
-      "Apró partfutó", "Aranylile", "Ázsiai pettyeslile", "Baird partfutó", "Bajszos poszáta",
-      "Bajszos sármány", "Bakcsó", "Balkáni fakopáncs", "Balkáni gerle", "Barátcinege",
-      "Barátkeselyű", "Barátposzáta", "Barátréce", "Barázdabillegető", "Barkóscinege",
-      "Barna füzike", "Barna kánya", "Barna rétihéja", "Barnahasú pusztaityúk", "Batla",
-      "Békászó sas", "Berki poszáta", "Berki tücsökmadár", "Berki veréb", "Bíbic",
-      "Billegetőcankó", "Bonaparte-partfutó", "Bonaparte-sirály", "Bonelli-füzike",
-      "Borzas gödény", "Böjti réce", "Bölömbika", "Búbos cinege", "Búbos vöcsök",
-      "Búbosbanka", "Búbos pacsirta", "Búbos réce", "Bütykös ásólúd", "Bütykös hattyú",
-      "Cankópartfutó", "Cifra pehelyréce", "Cigánycsuk", "Cigányréce", "Citrombillegető",
-      "Citromsármány", "Császármadár", "Cserregő nádiposzáta", "Csicsörke", "Csigaforgató",
-      "Csíkosfejű nádiposzáta", "Csilpcsalpfüzike", "Csíz", "Csóka", "Csonttollú",
-      "Csörgő réce", "Csuszka", "Csüllő", "Dankasirály", "Darázsölyv", "Daru", "Déli geze",
-      "Déli hantmadár", "Dolmányos sirály", "Dolmányos varjú", "Dögkeselyű", "Egerészölyv",
-      "Ékfarkú halfarkas", "Ékfarkú lile", "Eleonóra-sólyom", "Énekes hattyú",
-      "Énekes nádiposzáta", "Énekes rigó", "Erdei cankó", "Erdei fülesbagoly", "Erdei pacsirta",
-      "Erdei pinty", "Erdei pityer", "Erdei sármány", "Erdei szalonka", "Erdei szürkebegy",
-      "Északi búvár", "Ezüstlile", "Ezüstsirály", "Fácán", "Fakó keselyű", "Fakó rétihéja",
-      "Fattyúszerkő", "Fecskesirály", "Fehér gólya", "Fehércsőrű búvár", "Fehérfarkú lilebíbic",
-      "Fehérhátú fakopáncs", "Fehérkarmú vércse", "Fehérszárnyú szerkő", "Fekete gólya",
-      "Fekete harkály", "Fekete réce", "Fekete rigó", "Fekete sas", "Feketenyakú vöcsök",
-      "Feketeszárnyú székicsér", "Feketetorkú rigó", "Feketetorkú szürkebegy", "Fenyérfutó",
-      "Fenyőpinty", "Fenyőrigó", "Fenyősármány", "Fenyőszajkó", "Fenyvescinege", "Fitiszfüzike",
-      "Fogoly", "Foltos nádiposzáta", "Függőcinege", "Fülemüle", "Fülemülesitke",
-      "Füles vöcsök", "Füleskuvik", "Fürj", "Füsti fecske", "Füstös cankó", "Füstös réce",
-      "Fütyülő réce", "Gatyás ölyv", "Gatyáskuvik", "Gólyatöcs", "Gulipán", "Guvat",
-      "Gyöngybagoly", "Gyurgyalag", "Gyűrűscsőrű sirály", "Hajnalmadár", "Halászsas",
-      "Halászsirály", "Halcsontfarkú réce", "Halvány geze", "Halvány sarlósfecske",
-      "Hamvas küllő", "Hamvas rétihéja", "Hantmadár", "Haris", "Havasi csóka",
-      "Havasi fülespacsirta", "Havasi lile", "Havasi partfutó", "Havasi pityer",
-      "Havasi sarlósfecske", "Havasi szürkebegy", "Havasi varjú", "Havasipinty",
-      "Házi rozsdafarkú", "Házi veréb", "Hegyesfarkú partfutó", "Hegyi billegető",
-      "Hegyi fakusz", "Hegyi réce", "Héja", "Héjasas", "Heringsirály", "Himalájai füzike",
-      "Hóbagoly", "Holló", "Hósármány", "Hosszúcsőrű cankógoda", "Hosszúfarkú cankó",
-      "Indiai lúd", "Jeges búvár", "Jeges sirály", "Jegesréce", "Jégmadár", "Kabasólyom",
-      "Kacagócsér", "Kakukk", "Kalandrapacsirta", "Kanadai lúd", "Kanalasgém", "Karmazsinpirók",
-      "Kárókatona", "Karvaly", "Karvalybagoly", "Karvalyposzáta", "Kék cinege",
-      "Szürkefejű kékfú", "Kék galamb", "Kék kövirigó", "Kék vércse", "Kékbegy",
-      "Kékcsőrű réce", "Kékes rétihéja", "Kékfarkú", "Kékszárnyú réce", "Keleti gerle",
-      "Kenderike", "Kendermagos réce", "Kenti csér", "Kerceréce", "Kerecsensólyom",
-      "Keresztcsőrű", "Kerti geze", "Kerti poszáta", "Kerti rozsdafarkú", "Kerti sármány",
-      "Kígyászölyv", "Kínai üstökösgém", "Királyfüzike", "Kis bukó", "Kis csér",
-      "Kis fakopáncs", "Kis geze", "Kis goda", "Kis hattyú", "Kis héja", "Kis kárókatona",
-      "Kis kócsag", "Kis légykapó", "Kis lile", "Kis lilik", "Kis őrgébics", "Kis partfutó",
-      "Kis póling", "Kis poszáta", "Kis sárszalonka", "Kis sirály", "Kis sólyom",
-      "Kis vízicsibe", "Kis vöcsök", "Kőforgató", "Kontyos réce", "Korallsirály",
-      "Kormos légykapó", "Kormos szerkő", "Kormos varjú", "Kormosfejű cinege", "Kövirigó",
-      "Közép fakopáncs", "Kucsmás poszáta", "Kucsmás sármány", "Kuhi", "Kuvik",
-      "Küszvágó csér", "Laposcsőrű víztaposó", "Lappantyú", "Lazúrcinege", "Léprigó",
-      "Lilebíbic", "Lócsér", "Lunda", "Macskabagoly", "Márványos réce", "Meggyvágó",
-      "Mezei pacsirta", "Mezei poszáta", "Mezei veréb", "Molnárfecske", "Nádi sármány",
-      "Nádi tücsökmadár", "Nádirigó", "Nagy bukó", "Nagy fakopáncs", "Nagy fülemüle",
-      "Nagy goda", "Nagy halfarkas", "Nagy kócsag", "Nagy lilik", "Nagy őrgébics",
-      "Nagy pirók", "Nagy póling", "Nagy sárszalonka", "Naumann-rigó", "Nílusi lúd",
-      "Nyaktekercs", "Nyári lúd", "Nyílfarkú halfarkas", "Nyílfarkú réce", "Nyírfajd",
-      "Ökörszem", "Örvös bukó", "Örvös galamb", "Örvös légykapó", "Örvös lúd", "Örvös réce",
-      "Örvös rigó", "Őszapó", "Pajzsoscankó", "Parlagi galamb", "Parlagi pityer",
-      "Parlagi sas", "Pártásdaru", "Parti lile", "Parti pityer", "Partifecske",
-      "Pásztorgém", "Pásztormadár", "Pehelyréce", "Pettyes kakukk", "Pettyes vízicsibe",
-      "Piroslábú cankó", "Prérisirály", "Pusztai hantmadár", "Pusztai ölyv", "Pusztai sas",
-      "Réti cankó", "Réti fülesbagoly", "Réti pityer", "Réti tücsökmadár", "Rétisas",
-      "Reznek", "Rövidcsőrű lúd", "Rövidkarmú fakusz", "Rózsás flamingó", "Rózsás gödény",
-      "Rózsás pirók", "Rozsdás csuk", "Rozsdás nádiposzáta", "Rozsdástorkú pityer",
-      "Sárga billegető", "Sárgacsőrű kenderike", "Sárgafejű királyka", "Sárgalábú cankó",
-      "Sárgalábú sirály", "Sárgarigó", "Sárjáró", "Sarkantyús pityer", "Sarkantyús sármány",
-      "Sarki búvár", "Sarki csér", "Sarki lúd", "Sarki partfutó", "Sarki sirály",
-      "Sarlós partfutó", "Sarlósfecske", "Sárszalonka", "Seregély", "Siketfajd",
-      "Sisegő füzike", "Sivatagi hantmadár", "Sivatagi lile", "Sordély", "Sövénysármány",
-      "Steller-pehelyréce", "Süvöltő", "Szajkó", "Szalagos keresztcsőrű", "Szalakóta",
-      "Szárcsa", "Szarka", "Széki lile", "Székicsér", "Szélesfarkú halfarkas", "Széncinege",
-      "Szerecsensirály", "Szibériai szürkebegy", "Szikipacsirta", "Szirtifecske", "Szirti sas",
-      "Szőlőrigó", "Sztyeppi lile", "Sztyeppi sirály", "Szuharbújó", "Szürke cankó",
-      "Szürke gém", "Szürke légykapó", "Szürke zsezse", "Talpastyúk", "Tavi cankó",
-      "Temminck-partfutó", "Terekcankó", "Töcspartfutó", "Tengelic", "Tengeri partfutó",
-      "Tőkés réce", "Törpegém", "Törpekuvik", "Törpesármány", "Törpesas", "Törpevízicsibe",
-      "Tövisszúró gébics", "Trombitás sivatagipinty", "Tundralúd", "Túzok", "Tüskés bíbic",
-      "Tüzesfejű királyka", "Ugartyúk", "Uhu", "Uráli bagoly", "Üstökösgém", "Üstökösréce",
-      "Vadgerle", "Vándorfüzike", "Vándorpartfutó", "Vándorsólyom", "Vastagcsőrű füzike",
-      "Vékonycsőrű póling", "Vékonycsőrű sirály", "Vékonycsőrű víztaposó", "Vetési lúd",
-      "Vetési varjú", "Viharsirály", "Vízirigó", "Vízityúk", "Vörhenyes fecske",
-      "Vörhenyes sármány", "Vörös ásólúd", "Vörös gém", "Vörös kánya", "Vörös vércse",
-      "Vörösbegy", "Vörösfejű gébics", "Vörösnyakú lúd", "Vörösnyakú vöcsök",
-      "Wilson-víztaposó", "Zátonykócsag", "Zöld gyurgyalag", "Zöld küllő", "Zöldike",
-      "Zöldszárnyú réce", "Zsezse", "Egyéb nem meghatározott"
-    ];
-
-    let fajSzamlalo = 0;
-    let megfSzamlalo = 1;
-
-    // --- BESZÉDFELISMERÉS (WEB SPEECH API) MOTOR ---
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-    let isListening = false;
-    let activeBoxId = null;
-
-    if (SpeechRecognition) {
-      recognition = new SpeechRecognition();
-      recognition.lang = 'hu-HU';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = function() {
-        isListening = true;
-        updateMicUi(true);
-      };
-
-      recognition.onresult = function(event) {
-        const transcript = event.results[0][0].transcript;
-        if (activeBoxId) {
-          feldolgozEgyediHangot(activeBoxId, transcript);
-        } else {
-          feldolgozTeljesHangot(transcript);
-        }
-      };
-
-      recognition.onerror = function(event) {
-        console.warn("Beszédfelismerési hiba:", event.error);
-        stopListening();
-      };
-
-      recognition.onend = function() {
-        stopListening();
-      };
-    }
-
-    function toggleMainVoice() {
-      if (!SpeechRecognition) {
-        alert("A készülék böngészője nem támogatja a beépített beszédfelismerést.");
-        return;
-      }
-      activeBoxId = null;
-      if (isListening) {
-        recognition.stop();
-      } else {
-        recognition.start();
-      }
-    }
-
-    function toggleBoxVoice(id) {
-      if (!SpeechRecognition) {
-        alert("A készülék böngészője nem támogatja a beépített beszédfelismerést.");
-        return;
-      }
-      activeBoxId = id;
-      if (isListening) {
-        recognition.stop();
-      } else {
-        recognition.start();
-      }
-    }
-
-    function stopListening() {
-      isListening = false;
-      activeBoxId = null;
-      updateMicUi(false);
-    }
-
-    function updateMicUi(listening) {
-      const mainBtn = document.getElementById("btn-voice-main");
-      if (mainBtn) {
-        if (listening && !activeBoxId) {
-          mainBtn.classList.add("listening");
-          mainBtn.querySelector("span").innerText = "Hallgatom... Mondd most!";
-        } else {
-          mainBtn.classList.remove("listening");
-          mainBtn.querySelector("span").innerText = "Beszédfelismerés indítása";
-        }
-      }
-      document.querySelectorAll(".btn-mic-item").forEach(btn => {
-        btn.classList.remove("listening");
-      });
-      if (listening && activeBoxId) {
-        const activeBtn = document.querySelector(`#faj-${activeBoxId} .btn-mic-item`);
-        if (activeBtn) activeBtn.classList.add("listening");
-      }
-    }
-
-    // Magyar számszavak átalakítása számmá
-    function normalizeNumberWord(word) {
-      const map = {
-        'nulla': 0, 'egy': 1, 'kettő': 2, 'ketto': 2, 'két': 2, 'három': 3, 'harom': 3,
-        'négy': 4, 'negy': 4, 'öt': 5, 'ot': 5, 'hat': 6, 'hét': 7, 'het': 7,
-        'nyolc': 8, 'kilenc': 9, 'tíz': 10, 'tiz': 10, 'húsz': 20, 'harminc': 30,
-        'negyven': 40, 'ötven': 50, 'hatvan': 60, 'hetven': 70, 'nyolcvan': 80,
-        'kilencven': 90, 'száz': 100
-      };
-      const clean = word.toLowerCase();
-      if (!isNaN(clean)) return parseInt(clean, 10);
-      return map[clean] !== undefined ? map[clean] : null;
-    }
-
-    // Teljes mondat feldolgozása (Faj + Darabszámok + Megjegyzés)
-    function feldolgozTeljesHangot(text) {
-      const lower = text.toLowerCase();
-      
-      // 1. Faj megkeresése a listából
-      let talaltFaj = "";
-      let leghosszabbHossz = 0;
-      for (let f of FAJOK_LISTA) {
-        if (lower.includes(f.toLowerCase()) && f.length > leghosszabbHossz) {
-          talaltFaj = f;
-          leghosszabbHossz = f.length;
-        }
-      }
-
-      // 2. Kategóriák és számok kinyerése
-      let pld = null, him = null, tojo = null, ad = null, juv = null, imm = null, pull = null;
-      let megj = "";
-
-      const tokens = text.split(/\s+/);
-      for (let i = 0; i < tokens.length; i++) {
-        const val = normalizeNumberWord(tokens[i]);
-        if (val !== null) {
-          const next = (tokens[i + 1] || "").toLowerCase();
-          if (next.startsWith("hím") || next.startsWith("him")) {
-            him = (him || 0) + val; i++;
-          } else if (next.startsWith("tojó") || next.startsWith("tojo")) {
-            tojo = (tojo || 0) + val; i++;
-          } else if (next.startsWith("ad")) {
-            ad = (ad || 0) + val; i++;
-          } else if (next.startsWith("juv")) {
-            juv = (juv || 0) + val; i++;
-          } else if (next.startsWith("imm")) {
-            imm = (imm || 0) + val; i++;
-          } else if (next.startsWith("pull")) {
-            pull = (pull || 0) + val; i++;
-          } else {
-            pld = (pld || 0) + val;
-            if (next.startsWith("pld") || next.startsWith("példány") || next.startsWith("darab")) i++;
-          }
-        }
-      }
-
-      // Megjegyzés rész leválasztása, ha volt "megjegyzés" szó
-      if (lower.includes("megjegyzés")) {
-        const parts = text.split(/megjegyzés/i);
-        if (parts[1]) megj = parts[1].trim();
-      }
-
-      // Sor létrehozása és kitöltése
-      const box = addFaj();
-      if (talaltFaj) box.querySelector('.faj-nev').value = talaltFaj;
-      if (pld !== null) box.querySelector('.q-pld').value = pld;
-      if (him !== null) box.querySelector('.q-him').value = him;
-      if (tojo !== null) box.querySelector('.q-tojo').value = tojo;
-      if (ad !== null) box.querySelector('.q-ad').value = ad;
-      if (juv !== null) box.querySelector('.q-juv').value = juv;
-      if (imm !== null) box.querySelector('.q-imm').value = imm;
-      if (pull !== null) box.querySelector('.q-pull').value = pull;
-      if (megj) box.querySelector('.faj-megj').value = megj;
-
-      sum(box.querySelector('.q-pld'));
-    }
-
-    // Egyetlen megnyitott sor kiegészítése hanggal
-    function feldolgozEgyediHangot(id, text) {
-      const box = document.getElementById(`faj-${id}`);
-      if (!box) return;
-
-      const lower = text.toLowerCase();
-      let talaltFaj = "";
-      for (let f of FAJOK_LISTA) {
-        if (lower.includes(f.toLowerCase())) {
-          talaltFaj = f;
-          break;
-        }
-      }
-      if (talaltFaj) {
-        box.querySelector('.faj-nev').value = talaltFaj;
-      } else {
-        const megjInput = box.querySelector('.faj-megj');
-        megjInput.value = megjInput.value ? megjInput.value + "; " + text : text;
-      }
-    }
-
-    // --- ALAP ŰRLAP KEZELÉS ---
-    window.onload = function() {
-      const ma = new Date();
-      const ev = ma.getFullYear();
-      const ho = String(ma.getMonth() + 1).padStart(2, '0');
-      const nap = String(ma.getDate()).padStart(2, '0');
-      document.getElementById("idopont").value = `${ev}.${ho}.${nap}`;
-
-      addMegfigyelo();
-      addFaj();
-      frissitBanner();
+    const SUGO = {
+      "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
+      "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
+      "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
+      "Faj": "Kizárólag a listából választható megfigyelt faj. Kitöltése kötelező!",
+      "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
+      "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
+      "Megjegyzés": "Egyéb megjegyzések rögzítése."
     };
 
-    function frissitBanner() {
-      const offlineSorok = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      const banner = document.getElementById("offline-banner");
-      if (offlineSorok.length > 0) {
-        document.getElementById("offline-text").innerText = `📦 ${offlineSorok.length} offline felmérés várakozik`;
-        banner.style.display = "flex";
-      } else {
-        banner.style.display = "none";
+    const FAJOK = [
+      "Álarcos réce", "Alka", "Amerikai pettyeslile", "Amuri vércse", "Apácahantmadár", "Apácalúd", "Apró partfutó", "Aranylile", "Ázsiai pettyeslile", "Baird partfutó", "Bajszos poszáta", "Bajszos sármány", "Bakcsó", "Balkáni fakopáncs", "Balkáni gerle", "Barátcinege", "Barátkeselyű", "Barátposzáta", "Barátréce", "Barázdabillegető", "Barkóscinege", "Barna füzike", "Barna kánya", "Barna rétihéja", "Barnahasú pusztaityúk", "Batla", "Békászó sas", "Berki poszáta", "Berki tücsökmadár", "Berki veréb", "Bíbic", "Billegetőcankó", "Bonaparte-partfutó", "Bonaparte-sirály", "Bonelli-füzike", "Borzas gödény", "Böjti réce", "Bölömbika", "Búbos cinege", "Búbos vöcsök", "Búbosbanka", "Búbos pacsirta", "Búbos réce", "Bütykös ásólúd", "Bütykös hattyú", "Cankópartfutó", "Cifra pehelyréce", "Cigánycsuk", "Cigányréce", "Citrombillegető", "Citromsármány", "Császármadár", "Cserregő nádiposzáta", "Csicsörke", "Csigaforgató", "Csíkosfejű nádiposzáta", "Csilpcsalpfüzike", "Csíz", "Csóka", "Csonttollú", "Csörgő réce", "Csuszka", "Csüllő", "Dankasirály", "Darázsölyv", "Daru", "Déli geze", "Déli hantmadár", "Dolmányos sirály", "Dolmányos varjú", "Dögkeselyű", "Egerészölyv", "Ékfarkú halfarkas", "Ékfarkú lile", "Eleonóra-sólyom", "Énekes hattyú", "Énekes nádiposzáta", "Énekes rigó", "Erdei cankó", "Erdei fülesbagoly", "Erdei pacsirta", "Erdei pinty", "Erdei pityer", "Erdei sármány", "Erdei szalonka", "Erdei szürkebegy", "Északi búvár", "Ezüstlile", "Ezüstsirály", "Fácán", "Fakó keselyű", "Fakó rétihéja", "Fattyúszerkő", "Fecskesirály", "Fehér gólya", "Fehércsőrű búvár", "Fehérfarkú lilebíbic", "Fehérhátú fakopáncs", "Fehérkarmú vércse", "Fehérszárnyú szerkő", "Fekete gólya", "Fekete harkály", "Fekete réce", "Fekete rigó", "Fekete sas", "Feketenyakú vöcsök", "Feketeszárnyú székicsér", "Feketetorkú rigó", "Feketetorkú szürkebegy", "Fenyérfutó", "Fenyőpinty", "Fenyőrigó", "Fenyősármány", "Fenyőszajkó", "Fenyvescinege", "Fitiszfüzike", "Fogoly", "Foltos nádiposzáta", "Függőcinege", "Fülemüle", "Fülemülesitke", "Füles vöcsök", "Füleskuvik", "Fürj", "Füsti fecske", "Füstös cankó", "Füstös réce", "Fütyülő réce", "Gatyás ölyv", "Gatyáskuvik", "Gólyatöcs", "Gulipán", "Guvat", "Gyöngybagoly", "Gyurgyalag", "Gyűrűscsőrű sirály", "Hajnalmadár", "Halászsas", "Halászsirály", "Halcsontfarkú réce", "Halvány geze", "Halvány sarlósfecske", "Hamvas küllő", "Hamvas rétihéja", "Hantmadár", "Haris", "Havasi csóka", "Havasi fülespacsirta", "Havasi lile", "Havasi partfutó", "Havasi pityer", "Havasi sarlósfecske", "Havasi szürkebegy", "Havasi varjú", "Havasipinty", "Házi rozsdafarkú", "Házi veréb", "Hegyesfarkú partfutó", "Hegyi billegető", "Hegyi fakusz", "Hegyi réce", "Héja", "Héjasas", "Heringsirály", "Himalájai füzike", "Hóbagoly", "Holló", "Hósármány", "Hosszúcsőrű cankógoda", "Hosszúfarkú cankó", "Indiai lúd", "Jeges búvár", "Jeges sirály", "Jegesréce", "Jégmadár", "Kabasólyom", "Kacagócsér", "Kakukk", "Kalandrapacsirta", "Kanadai lúd", "Kanalas réce", "Kanalasgém", "Karmazsinpirók", "Kárókatona", "Karvaly", "Karvalybagoly", "Karvalyposzáta", "Kék cinege", "Szürkefejű kékfú", "Kék galamb", "Kék kövirigó", "Kék vércse", "Kékbegy", "Kékcsőrű réce", "Kékes rétihéja", "Kékfarkú", "Kékszárnyú réce", "Keleti gerle", "Kenderike", "Kendermagos réce", "Kenti csér", "Kerceréce", "Kerecsensólyom", "Keresztcsőrű", "Kerti geze", "Kerti poszáta", "Kerti rozsdafarkú", "Kerti sármány", "Kígyászölyv", "Kínai üstökösgém", "Királyfüzike", "Kis bukó", "Kis csér", "Kis fakopáncs", "Kis geze", "Kis goda", "Kis hattyú", "Kis héja", "Kis kárókatona", "Kis kócsag", "Kis légykapó", "Kis lile", "Kis lilik", "Kis őrgébics", "Kis partfutó", "Kis póling", "Kis poszáta", "Kis sárszalonka", "Kis sirály", "Kis sólyom", "Kis vízicsibe", "Kis vöcsök", "Kőforgató", "Kontyos réce", "Korallsirály", "Kormos légykapó", "Kormos szerkő", "Kormos varjú", "Kormosfejű cinege", "Kövirigó", "Közép fakopáncs", "Kucsmás poszáta", "Kucsmás sármány", "Kuhi", "Kuvik", "Küszvágó csér", "Laposcsőrű víztaposó", "Lappantyú", "Lazúrcinege", "Léprigó", "Lilebíbic", "Lócsér", "Lunda", "Macskabagoly", "Márványos réce", "Meggyvágó", "Mezei pacsirta", "Mezei poszáta", "Mezei veréb", "Molnárfecske", "Nádi sármány", "Nádi tücsökmadár", "Nádirigó", "Nagy bukó", "Nagy fakopáncs", "Nagy fülemüle", "Nagy goda", "Nagy halfarkas", "Nagy kócsag", "Nagy lilik", "Nagy őrgébics", "Nagy pirók", "Nagy póling", "Nagy sárszalonka", "Naumann-rigó", "Nílusi lúd", "Nyaktekercs", "Nyári lúd", "Nyílfarkú halfarkas", "Nyílfarkú réce", "Nyírfajd", "Ökörszem", "Örvös bukó", "Örvös galamb", "Örvös légykapó", "Örvös lúd", "Örvös réce", "Örvös rigó", "Őszapó", "Pajzsoscankó", "Parlagi galamb", "Parlagi pityer", "Parlagi sas", "Pártásdaru", "Parti lile", "Parti pityer", "Partifecske", "Pásztorgém", "Pásztormadár", "Pehelyréce", "Pettyes kakukk", "Pettyes vízicsibe", "Piroslábú cankó", "Prérisirály", "Pusztai hantmadár", "Pusztai ölyv", "Pusztai sas", "Réti cankó", "Réti fülesbagoly", "Réti pityer", "Réti tücsökmadár", "Rétisas", "Reznek", "Rövidcsőrű lúd", "Rövidkarmú fakusz", "Rózsás flamingó", "Rózsás gödény", "Rózsás pirók", "Rozsdás csuk", "Rozsdás nádiposzáta", "Rozsdástorkú pityer", "Sárga billegető", "Sárgacsőrű kenderike", "Sárgafejű királyka", "Sárgalábú cankó", "Sárgalábú sirály", "Sárgarigó", "Sárjáró", "Sarkantyús pityer", "Sarkantyús sármány", "Sarki búvár", "Sarki csér", "Sarki lúd", "Sarki partfutó", "Sarki sirály", "Sarlós partfutó", "Sarlósfecske", "Sárszalonka", "Seregély", "Siketfajd", "Sisegő füzike", "Sivatagi hantmadár", "Sivatagi lile", "Sordély", "Sövénysármány", "Steller-pehelyréce", "Süvöltő", "Szajkó", "Szalagos keresztcsőrű", "Szalakóta", "Szárcsa", "Szarka", "Széki lile", "Székicsér", "Szélesfarkú halfarkas", "Széncinege", "Szerecsensirály", "Szibériai szürkebegy", "Szikipacsirta", "Szirtifecske", "Szirti sas", "Szőlőrigó", "Sztyeppi lile", "Sztyeppi sirály", "Szuharbújó", "Szürke cankó", "Szürke gém", "Szürke légykapó", "Szürke zsezse", "Talpastyúk", "Tavi cankó", "Temminck-partfutó", "Terekcankó", "Töcspartfutó", "Tengelic", "Tengeri partfutó", "Tőkés réce", "Törpegém", "Törpekuvik", "Törpesármány", "Törpesas", "Törpevízicsibe", "Tövisszúró gébics", "Trombitás sivatagipinty", "Tundralúd", "Túzok", "Tüskés bíbic", "Tüzesfejű királyka", "Ugartyúk", "Uhu", "Uráli bagoly", "Üstökösgém", "Üstökösréce", "Vadgerle", "Vándorfüzike", "Vándorpartfutó", "Vándorsólyom", "Vastagcsőrű füzike", "Vékonycsőrű póling", "Vékonycsőrű sirály", "Vékonycsőrű víztaposó", "Vetési lúd", "Vetési varjú", "Viharsirály", "Vízirigó", "Vízityúk", "Vörhenyes fecske", "Vörhenyes sármány", "Vörös ásólúd", "Vörös gém", "Vörös kánya", "Vörös vércse", "Vörösbegy", "Vörösfejű gébics", "Vörösnyakú lúd", "Vörösnyakú vöcsök", "Wilson-víztaposó", "Zátonykócsag", "Zöld gyurgyalag", "Zöld küllő", "Zöldike", "Zöldszárnyú réce", "Zsezse", "Egyéb nem meghatározott"
+    ];
+
+    let kivalasztottFaj = "";
+
+    // ================= PISZKOZAT (ÁLLAPOT) MENTÉS ÉS VISSZATÖLTÉS =================
+    function saveDraft(isModalOpen = null) {
+      const obsInputs = document.querySelectorAll('.obs-input');
+      const obsValues = Array.from(obsInputs).map(inp => inp.value);
+
+      const currentModalOpen = isModalOpen !== null
+        ? isModalOpen
+        : (document.getElementById('fajModal').style.display === 'flex');
+
+      const draft = {
+        date: document.getElementById('entryDate').value,
+        terulet: document.getElementById('entryTerulet').value,
+        korzet: document.getElementById('entryKorzet').value,
+        faj: kivalasztottFaj,
+        num_pld: document.getElementById('num_pld').value,
+        num_him: document.getElementById('num_him').value,
+        num_tojo: document.getElementById('num_tojo').value,
+        num_ad: document.getElementById('num_ad').value,
+        num_juv: document.getElementById('num_juv').value,
+        num_imm: document.getElementById('num_imm').value,
+        num_pull: document.getElementById('num_pull').value,
+        num_ossz: document.getElementById('num_ossz').value,
+        observers: obsValues,
+        megjegyzes: document.getElementById('txtMegjegyzes').value,
+        fajModalOpen: currentModalOpen,
+        fajModalSearch: document.getElementById('fajModalSearch').value
+      };
+
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      const ind = document.getElementById('draftStatus');
+      if (ind) {
+        const now = new Date();
+        ind.innerText = `Állapot mentve (${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')})`;
       }
     }
 
-    function addMegfigyelo() {
-      megfSzamlalo++;
-      const div = document.createElement("div");
-      div.innerHTML = `
-        <label>Megfigyelő ${megfSzamlalo}</label>
-        <input type="text" class="megf-extra" oninput="this.value = this.value.toUpperCase()" placeholder="NÉV...">
-      `;
-      document.getElementById("extra-megf").appendChild(div);
-    }
+    function restoreDraft() {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) {
+        setTodayDate();
+        renderObserverInputs(["", ""]);
+        return;
+      }
 
-    function addFaj() {
-      fajSzamlalo++;
-      const container = document.getElementById("fajok-lista");
-      const box = document.createElement("div");
-      box.className = "faj-box";
-      box.id = `faj-${fajSzamlalo}`;
-      box.dataset.index = fajSzamlalo;
+      try {
+        const draft = JSON.parse(raw);
+        document.getElementById('entryDate').value = draft.date || getTodayStr();
+        document.getElementById('entryTerulet').value = draft.terulet || "";
+        document.getElementById('entryKorzet').value = draft.korzet || "";
 
-      box.innerHTML = `
-        <div class="faj-hdr">
-          <span style="font-weight:bold; color:#5dade2;">Faj #${fajSzamlalo}</span>
-          <div class="faj-actions">
-            <button type="button" class="btn-mic-item" onclick="toggleBoxVoice(${fajSzamlalo})">🎙️ Diktálás</button>
-            <button type="button" class="btn-del" onclick="delFaj(${fajSzamlalo})">✕ Törlés</button>
-          </div>
-        </div>
+        if (draft.faj) {
+          kivalasztottFaj = draft.faj;
+          document.getElementById('fajTriggerText').innerText = kivalasztottFaj;
+          document.getElementById('fajTrigger').classList.remove('placeholder');
+        }
 
-        <input list="dl-fajok" class="faj-nev" placeholder="Kezdd el gépelni a faj nevét..." required>
-        <datalist id="dl-fajok">
-          ${FAJOK_LISTA.map(f => `<option value="${f}">`).join('')}
-        </datalist>
+        document.getElementById('num_pld').value = draft.num_pld || "";
+        document.getElementById('num_him').value = draft.num_him || "";
+        document.getElementById('num_tojo').value = draft.num_tojo || "";
+        document.getElementById('num_ad').value = draft.num_ad || "";
+        document.getElementById('num_juv').value = draft.num_juv || "";
+        document.getElementById('num_imm').value = draft.num_imm || "";
+        document.getElementById('num_pull').value = draft.num_pull || "";
+        document.getElementById('num_ossz').value = draft.num_ossz || "";
 
-        <div class="qty-grid">
-          <div class="qty-item"><span>pld.</span><input type="number" class="q-pld" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Hím</span><input type="number" class="q-him" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Tojó</span><input type="number" class="q-tojo" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Ad</span><input type="number" class="q-ad" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Juv</span><input type="number" class="q-juv" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Imm</span><input type="number" class="q-imm" min="0" oninput="sum(this)"></div>
-          <div class="qty-item"><span>Pull</span><input type="number" class="q-pull" min="0" oninput="sum(this)"></div>
-          <div class="qty-item total"><span>Össz</span><input type="number" class="q-ossz" readonly></div>
-        </div>
+        const obsList = (draft.observers && draft.observers.length >= 2) ? draft.observers : ["", ""];
+        renderObserverInputs(obsList);
 
-        <input type="text" class="faj-megj" placeholder="Megjegyzés..." style="margin-top:6px; margin-bottom:0;">
-      `;
+        document.getElementById('txtMegjegyzes').value = draft.megjegyzes || "";
 
-      container.insertBefore(box, container.firstChild);
-      return box;
-    }
-
-    function delFaj(id) {
-      if (document.querySelectorAll('.faj-box').length > 1) {
-        document.getElementById(`faj-${id}`).remove();
-      } else {
-        alert("Legalább egy faj megadása kötelező!");
+        // Utolsó nyitott képernyő visszaállítása
+        if (draft.fajModalOpen) {
+          document.getElementById('fajModal').style.display = 'flex';
+          document.getElementById('fajModalSearch').value = draft.fajModalSearch || "";
+          renderModalList();
+        }
+      } catch (e) {
+        setTodayDate();
+        renderObserverInputs(["", ""]);
       }
     }
 
-    function sum(el) {
-      const box = el.closest('.faj-box');
-      const fields = ['q-pld', 'q-him', 'q-tojo', 'q-ad', 'q-juv', 'q-imm', 'q-pull'];
-      let total = 0;
-      let has = false;
+    function clearDraftForNewForm() {
+      const keepDate = document.getElementById('entryDate').value || getTodayStr();
+      const keepTerulet = document.getElementById('entryTerulet').value;
+      const obsInputs = document.querySelectorAll('.obs-input');
+      const keepObservers = Array.from(obsInputs).map(inp => inp.value);
 
-      fields.forEach(f => {
-        const val = box.querySelector(`.${f}`).value.trim();
-        if (val && !isNaN(val)) {
-          total += parseInt(val, 10);
-          has = true;
+      kivalasztottFaj = "";
+      document.getElementById('fajTriggerText').innerText = "Érintsd meg a faj kiválasztásához...";
+      document.getElementById('fajTrigger').classList.add('placeholder');
+      document.getElementById('entryKorzet').value = '';
+      ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull', 'num_ossz'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('txtMegjegyzes').value = '';
+      document.getElementById('entryDate').value = keepDate;
+      document.getElementById('entryTerulet').value = keepTerulet;
+      renderObserverInputs(keepObservers);
+
+      saveDraft(false);
+    }
+
+    // ================= HANG ALAPÚ ADATBEVITEL VALIDÁCIÓVAL =================
+    let recognition = null;
+    let voiceTargetId = null;
+    let voiceUppercase = false;
+    let voiceIsFajSearch = false;
+    let voiceRecognizedText = "";
+
+    function startVoiceInput(targetId, uppercase = false, isFajSearch = false) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Ez a böngésző nem támogatja a hangalapú beszédfelismerést. Használd a telefon billentyűzetének mikrofon gombját!");
+        return;
+      }
+
+      voiceTargetId = targetId;
+      voiceUppercase = uppercase;
+      voiceIsFajSearch = isFajSearch;
+      voiceRecognizedText = "";
+
+      document.getElementById('voiceModal').style.display = 'flex';
+      document.getElementById('voiceStatus').innerText = "🎙️ Hallgatlak... Beszélj tisztán!";
+      document.getElementById('voiceStatus').style.color = "#eab308";
+      document.getElementById('voicePreview').innerText = "...";
+      document.getElementById('btnVoiceConfirm').disabled = true;
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'hu-HU';
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        transcript = transcript.trim();
+        if (voiceUppercase) transcript = transcript.toUpperCase();
+
+        voiceRecognizedText = transcript;
+        document.getElementById('voicePreview').innerText = transcript || "...";
+
+        if (event.results[0].isFinal && transcript.length > 0) {
+          document.getElementById('voiceStatus').innerText = "Ellenőrizd, majd nyomd meg a Jóváhagyást!";
+          document.getElementById('voiceStatus').style.color = "#22c55e";
+          document.getElementById('btnVoiceConfirm').disabled = false;
+        }
+      };
+
+      recognition.onerror = (event) => {
+        document.getElementById('voiceStatus').innerText = "Hiba történt (" + event.error + "). Próbáld újra!";
+        document.getElementById('voiceStatus').style.color = "#ef4444";
+      };
+
+      recognition.onend = () => {
+        if (voiceRecognizedText.length > 0) {
+          document.getElementById('voiceStatus').innerText = "Ellenőrizd, majd nyomd meg a Jóváhagyást!";
+          document.getElementById('voiceStatus').style.color = "#22c55e";
+          document.getElementById('btnVoiceConfirm').disabled = false;
+        } else {
+          document.getElementById('voiceStatus').innerText = "Nem sikerült szöveget rögzíteni. Nyomj az Újra gombra!";
+        }
+      };
+
+      recognition.start();
+    }
+
+    function confirmVoice() {
+      if (!voiceRecognizedText) return;
+      const targetEl = document.getElementById(voiceTargetId);
+      if (targetEl) {
+        targetEl.value = voiceRecognizedText;
+        if (voiceIsFajSearch) {
+          renderModalList();
+        }
+        saveDraft();
+      }
+      closeVoiceModal();
+    }
+
+    function retryVoice() {
+      if (recognition) {
+        try { recognition.abort(); } catch (e) {}
+      }
+      startVoiceInput(voiceTargetId, voiceUppercase, voiceIsFajSearch);
+    }
+
+    function cancelVoice() {
+      if (recognition) {
+        try { recognition.abort(); } catch (e) {}
+      }
+      closeVoiceModal();
+    }
+
+    function closeVoiceModal() {
+      document.getElementById('voiceModal').style.display = 'none';
+    }
+
+    // ================= FAJVÁLASZTÓ (CSAK LISTÁBÓL) =================
+    function openFajModal() {
+      document.getElementById('fajModal').style.display = 'flex';
+      document.getElementById('fajModalSearch').value = '';
+      renderModalList();
+      saveDraft(true);
+    }
+
+    function closeFajModal() {
+      document.getElementById('fajModal').style.display = 'none';
+      saveDraft(false);
+    }
+
+    function renderModalList() {
+      const q = document.getElementById('fajModalSearch').value.toLowerCase().trim();
+      const listEl = document.getElementById('fajModalList');
+      listEl.innerHTML = '';
+
+      const talalatok = q === '' ? FAJOK : FAJOK.filter(f => f.toLowerCase().includes(q));
+
+      if (talalatok.length === 0) {
+        const emptyRow = document.createElement('div');
+        emptyRow.className = 'faj-modal-item';
+        emptyRow.style.color = '#94a3b8';
+        emptyRow.innerText = 'Nincs találat a listában. Válaszd az "Egyéb nem meghatározott" opciót vagy módosítsd a keresést.';
+        listEl.appendChild(emptyRow);
+        return;
+      }
+
+      talalatok.forEach(faj => {
+        const row = document.createElement('div');
+        row.className = 'faj-modal-item';
+        row.innerText = faj;
+        row.onclick = () => selectFaj(faj);
+        listEl.appendChild(row);
+      });
+
+      saveDraft(true);
+    }
+
+    function selectFaj(faj) {
+      // Csak a FAJOK tömbben szereplő elem fogadható el
+      if (!FAJOK.includes(faj)) {
+        alert("Csak a fajlistából választhatsz fajt!");
+        return;
+      }
+
+      if (faj === "Egyéb nem meghatározott") {
+        const res = prompt("Add meg a faj pontosítását:");
+        kivalasztottFaj = res && res.trim() ? "EGYÉB: " + res.trim().toUpperCase() : "Egyéb nem meghatározott";
+      } else {
+        kivalasztottFaj = faj;
+      }
+
+      const trg = document.getElementById('fajTriggerText');
+      trg.innerText = kivalasztottFaj;
+      document.getElementById('fajTrigger').classList.remove('placeholder');
+      closeFajModal();
+    }
+
+    // ================= MEGFIGYELŐ MEZŐK =================
+    function renderObserverInputs(valuesArray) {
+      const container = document.getElementById('observerContainer');
+      container.innerHTML = '';
+      valuesArray.forEach((val, idx) => {
+        createSingleObserverRow(idx + 1, val);
+      });
+    }
+
+    function createSingleObserverRow(number, initialValue = "") {
+      const container = document.getElementById('observerContainer');
+      const row = document.createElement('div');
+      row.className = 'input-with-mic';
+
+      const inpId = `obs_field_${number}_${Date.now()}`;
+      const inp = document.createElement('input');
+      inp.type = "text";
+      inp.id = inpId;
+      inp.className = "obs-input uppercase";
+      inp.setAttribute("list", "obsList");
+      inp.placeholder = number === 1 ? "MEGFIGYELŐ 1 * (ELSŐDLEGES)" : `MEGFIGYELŐ ${number}`;
+      inp.value = initialValue;
+      inp.oninput = () => saveDraft();
+
+      const micBtn = document.createElement('button');
+      micBtn.type = "button";
+      micBtn.className = "btn-mic";
+      micBtn.innerText = "🎤";
+      micBtn.title = "Megfigyelő diktálása";
+      micBtn.onclick = () => startVoiceInput(inpId, true);
+
+      row.appendChild(inp);
+      row.appendChild(micBtn);
+      container.appendChild(row);
+    }
+
+    function addObserverField() {
+      const container = document.getElementById('observerContainer');
+      const count = container.querySelectorAll('input').length + 1;
+      createSingleObserverRow(count, "");
+      saveDraft();
+    }
+
+    // ================= ADATBÁZIS ÉS SZÁMOLÁS =================
+    let db;
+    const request = indexedDB.open("MadarAppDB", 1);
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      db.createObjectStore("megfigyelesek", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      updateStatusBadge();
+      populateDatalists();
+    };
+
+    function getTodayStr() {
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = String(today.getMonth() + 1).padStart(2, '0');
+      const d = String(today.getDate()).padStart(2, '0');
+      return `${y}.${m}.${d}`;
+    }
+
+    function setTodayDate() {
+      document.getElementById('entryDate').value = getTodayStr();
+    }
+
+    function onNumInput() {
+      calcSum();
+      saveDraft();
+    }
+
+    function calcSum() {
+      const fields = ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull'];
+      let sum = 0;
+      let hasVal = false;
+      fields.forEach(id => {
+        const v = parseInt(document.getElementById(id).value, 10);
+        if (!isNaN(v)) {
+          sum += v;
+          hasVal = true;
+        }
+      });
+      document.getElementById('num_ossz').value = hasVal ? sum : '';
+    }
+
+    function parseVal(id) {
+      const v = parseInt(document.getElementById(id).value, 10);
+      return isNaN(v) ? "" : v;
+    }
+
+    function saveRecord() {
+      const datum = document.getElementById('entryDate').value.trim();
+      const terulet = document.getElementById('entryTerulet').value.trim().toUpperCase();
+      const korzet = document.getElementById('entryKorzet').value.trim().toUpperCase();
+      
+      const obsInputs = document.querySelectorAll('.obs-input');
+      const megfigyelo1 = obsInputs[0] ? obsInputs[0].value.trim().toUpperCase() : "";
+
+      if (!datum || !terulet || !kivalasztottFaj || !megfigyelo1) {
+        alert("Az Időpont, Terület, Faj és Megfigyelő 1 kitöltése kötelező!");
+        return;
+      }
+
+      // Ellenőrzés, hogy a faj ténylegesen a listából származik-e
+      const isFajValid = FAJOK.includes(kivalasztottFaj) || kivalasztottFaj.startsWith("EGYÉB:");
+      if (!isFajValid) {
+        alert("Érvénytelen faj! Kérlek válassz a fajlistából!");
+        return;
+      }
+
+      const pld = parseVal('num_pld');
+      const him = parseVal('num_him');
+      const tojo = parseVal('num_tojo');
+      const ad = parseVal('num_ad');
+      const juv = parseVal('num_juv');
+      const imm = parseVal('num_imm');
+      const pull = parseVal('num_pull');
+      const ossz = parseVal('num_ossz');
+
+      if (pld === "" && him === "" && tojo === "" && ad === "" && juv === "" && imm === "" && pull === "") {
+        alert("A mennyiségi rubrikák közül legalább egyet kötelező kitölteni!");
+        return;
+      }
+
+      const record = {
+        "Időpont": datum,
+        "Terület": terulet,
+        "Körzet": korzet,
+        "Faj": kivalasztottFaj,
+        "pld.": pld,
+        "Hím": him,
+        "Tojó": tojo,
+        "Ad": ad,
+        "Juv": juv,
+        "Imm": imm,
+        "Pull": pull,
+        "Össz": ossz,
+        "Megfigyelő 1": megfigyelo1,
+        "Megjegyzés": document.getElementById('txtMegjegyzes').value.trim(),
+        "Feltoltve": false
+      };
+
+      obsInputs.forEach((inp, idx) => {
+        if (idx > 0) {
+          const val = inp.value.trim().toUpperCase();
+          if (val) record[`Megfigyelő ${idx + 1}`] = val;
         }
       });
 
-      box.querySelector('.q-ossz').value = has ? total : "";
+      const tx = db.transaction("megfigyelesek", "readwrite");
+      tx.objectStore("megfigyelesek").add(record);
+      tx.oncomplete = () => {
+        alert("Adat elmentve! Új üres adatlap megnyitva.");
+        clearDraftForNewForm();
+        updateStatusBadge();
+        populateDatalists();
+      };
     }
 
-    function parseVal(v) {
-      v = v.trim();
-      return v !== "" && !isNaN(v) ? parseInt(v, 10) : null;
+    function updateStatusBadge() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const all = req.result;
+        const unsynced = all.filter(r => !r.Feltoltve).length;
+        document.getElementById('localStatus').innerText = `Helyben mentett: ${all.length} sor (Feltöltendő: ${unsynced})`;
+      };
     }
 
-    function getOsszesitettAdatok() {
-      const idopont = document.getElementById("idopont").value.trim();
-      const terulet = document.getElementById("terulet").value.trim();
-      const korzet = document.getElementById("korzet").value.trim();
-      const megf1 = document.getElementById("megf1").value.trim();
+    function populateDatalists() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const all = req.result;
+        const teruletek = new Set();
+        const megfigyelok = new Set();
 
-      if (!idopont || !terulet || !megf1) {
-        alert("Időpont, Terület és Megfigyelő 1 megadása kötelező!");
-        return null;
-      }
-
-      const raw = [];
-      const boxes = Array.from(document.querySelectorAll('.faj-box'));
-
-      for (let b of boxes) {
-        let faj = b.querySelector('.faj-nev').value.trim();
-        if (!faj) {
-          alert("Minden sornál ki kell választani a fajt!");
-          return null;
-        }
-
-        let pld = parseVal(b.querySelector('.q-pld').value);
-        let him = parseVal(b.querySelector('.q-him').value);
-        let tojo = parseVal(b.querySelector('.q-tojo').value);
-        let ad = parseVal(b.querySelector('.q-ad').value);
-        let juv = parseVal(b.querySelector('.q-juv').value);
-        let imm = parseVal(b.querySelector('.q-imm').value);
-        let pull = parseVal(b.querySelector('.q-pull').value);
-
-        if ([pld, him, tojo, ad, juv, imm, pull].every(x => x === null)) {
-          alert(`A(z) ${faj} fajnál legalább egy darabszámot be kell írni!`);
-          return null;
-        }
-
-        let megj = b.querySelector('.faj-megj').value.trim();
-        raw.push({ faj, pld, him, tojo, ad, juv, imm, pull, megj, index: parseInt(b.dataset.index, 10) });
-      }
-
-      raw.sort((a, b) => a.index - b.index);
-      const osszesit = {};
-      const fajSorrend = [];
-
-      raw.forEach(r => {
-        if (!osszesit[r.faj]) {
-          fajSorrend.push(r.faj);
-          osszesit[r.faj] = { pld: null, him: null, tojo: null, ad: null, juv: null, imm: null, pull: null, megj: [] };
-        }
-        ['pld', 'him', 'tojo', 'ad', 'juv', 'imm', 'pull'].forEach(f => {
-          if (r[f] !== null) {
-            osszesit[r.faj][f] = (osszesit[r.faj][f] || 0) + r[f];
-          }
+        all.forEach(r => {
+          if (r["Terület"]) teruletek.add(r["Terület"]);
+          Object.keys(r).forEach(k => {
+            if (k.startsWith("Megfigyelő") && r[k]) megfigyelok.add(r[k]);
+          });
         });
-        if (r.megj && !osszesit[r.faj].megj.includes(r.megj)) {
-          osszesit[r.faj].megj.push(r.megj);
+
+        const dlTer = document.getElementById('teruletList');
+        dlTer.innerHTML = '';
+        teruletek.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          dlTer.appendChild(opt);
+        });
+
+        const dlObs = document.getElementById('obsList');
+        dlObs.innerHTML = '';
+        megfigyelok.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          dlObs.appendChild(opt);
+        });
+      };
+    }
+
+    async function syncCloud() {
+      if (!navigator.onLine) {
+        alert("Nincs internetkapcsolat!");
+        return;
+      }
+
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+
+      req.onsuccess = async () => {
+        const unsynced = req.result.filter(r => !r.Feltoltve);
+        if (unsynced.length === 0) {
+          alert("Minden adat fel van töltve!");
+          return;
         }
-      });
 
-      const megfAdatok = { "Megfigyelő 1": megf1 };
-      document.querySelectorAll('.megf-extra').forEach((inp, i) => {
-        const val = inp.value.trim();
-        megfAdatok[`Megfigyelő ${i + 2}`] = val ? val : "";
-      });
+        try {
+          await fetch(FELHO_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uj_megfigyelesek: unsynced })
+          });
 
-      const mentendoSorok = [];
-      fajSorrend.forEach(faj => {
-        const o = osszesit[faj];
-        const reszek = [o.pld, o.him, o.tojo, o.ad, o.juv, o.imm, o.pull].filter(x => x !== null);
-        const ossz = reszek.length > 0 ? reszek.reduce((a, b) => a + b, 0) : null;
+          const writeTx = db.transaction("megfigyelesek", "readwrite");
+          const writeStore = writeTx.objectStore("megfigyelesek");
+          unsynced.forEach(rec => {
+            rec.Feltoltve = true;
+            writeStore.put(rec);
+          });
 
-        const rekord = {
-          "Időpont": idopont,
-          "Terület": terulet,
-          "Körzet": korzet,
-          "Faj": faj,
-          "pld.": o.pld,
-          "Hím": o.him,
-          "Tojó": o.tojo,
-          "Ad": o.ad,
-          "Juv": o.juv,
-          "Imm": o.imm,
-          "Pull": o.pull,
-          "Össz": ossz,
-          "Megjegyzés": o.megj.join("; ")
-        };
-        Object.assign(rekord, megfAdatok);
-        mentendoSorok.push(rekord);
-      });
-
-      return mentendoSorok;
+          writeTx.oncomplete = () => {
+            alert(`${unsynced.length} rekord sikeresen elküldve a Google Táblázatba!`);
+            updateStatusBadge();
+          };
+        } catch (err) {
+          alert("Feltöltési hiba: " + err.message);
+        }
+      };
     }
 
-    function mentesOffline() {
-      const mentendoSorok = getOsszesitettAdatok();
-      if (!mentendoSorok) return;
+    function exportToExcel() {
+      const tx = db.transaction("megfigyelesek", "readonly");
+      const store = tx.objectStore("megfigyelesek");
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const data = req.result;
+        if (data.length === 0) {
+          alert("Nincs mentett adat!");
+          return;
+        }
+        const cleanData = data.map(item => {
+          const copy = Object.assign({}, item);
+          delete copy.id;
+          return copy;
+        });
 
-      let tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      tarolt = tarolt.concat(mentendoSorok);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tarolt));
-
-      alert(`💾 ${mentendoSorok.length} faj elmentve a telefonra!\n\nAmikor térerőhöz érsz, a felső narancssárga sávval feltöltheted a táblázatba.`);
-      location.reload();
+        const ws = XLSX.utils.json_to_sheet(cleanData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Megfigyelesek");
+        XLSX.writeFile(wb, "madarmegfigyelesek_mobil.xlsx");
+      };
     }
 
-    function mentesOnline() {
-      const mentendoSorok = getOsszesitettAdatok();
-      if (!mentendoSorok) return;
-
-      const btn = document.querySelector('.btn-online');
-      btn.innerText = "Küldés...";
-      btn.disabled = true;
-
-      fetch(FELHO_API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uj_megfigyelesek: mentendoSorok })
-      })
-      .then(() => {
-        btn.innerText = "☁️ Feltöltés Táblázatba";
-        btn.disabled = false;
-        alert(`✅ Siker! ${mentendoSorok.length} faj beküldve a Google Táblázatba!`);
-        location.reload();
-      })
-      .catch(err => {
-        btn.innerText = "☁️ Feltöltés Táblázatba";
-        btn.disabled = false;
-        alert("Hálózati hiba! Használd a narancssárga 'Mentés Telefonra' gombot offline módban.");
-      });
+    function alertHelp(key) { alert(SUGO[key] || "Nincs leírás."); }
+    function alertFullHelp() {
+      alert(Object.entries(SUGO).map(([k, v]) => `• ${k.toUpperCase()}:\n${v}`).join("\n\n"));
     }
 
-    function letoltesExcelbe() {
-      const mentendoSorok = getOsszesitettAdatok();
-      if (!mentendoSorok || mentendoSorok.length === 0) return;
+    // Biztonsági mentés az oldal elhagyásakor / bezárásakor
+    window.addEventListener('beforeunload', () => saveDraft());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveDraft();
+    });
 
-      const headers = Object.keys(mentendoSorok[0]);
-      let csvContent = "\uFEFF";
-      csvContent += headers.join(";") + "\r\n";
-
-      mentendoSorok.forEach(row => {
-        const line = headers.map(header => {
-          let val = row[header];
-          if (val === null || val === undefined) return "";
-          val = String(val).replace(/"/g, '""');
-          return `"${val}"`;
-        }).join(";");
-        csvContent += line + "\r\n";
-      });
-
-      const datum = document.getElementById("idopont").value.replace(/\./g, "-");
-      const terulet = document.getElementById("terulet").value.replace(/\s+/g, "_");
-      const fajlnev = `madarmegfigyeles_${datum}_${terulet}.csv`;
-
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", fajlnev);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function szinkronizalOfflineAdatok() {
-      const tarolt = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      if (tarolt.length === 0) return;
-
-      const btn = document.getElementById("btn-sync-offline");
-      btn.innerText = "Feltöltés...";
-      btn.disabled = true;
-
-      fetch(FELHO_API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uj_megfigyelesek: tarolt })
-      })
-      .then(() => {
-        localStorage.removeItem(STORAGE_KEY);
-        alert(`🎉 Siker! Mind a ${tarolt.length} korábban elmentett offline faj bekerült a Google Táblázatba!`);
-        location.reload();
-      })
-      .catch((err) => {
-        btn.innerText = "📤 Összes feltöltése";
-        btn.disabled = false;
-        alert("Hiba a feltöltéskor: " + err);
-      });
-    }
-  </script>
-
-  <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=101');
+      navigator.serviceWorker.register('sw.js');
     }
+
+    restoreDraft();
   </script>
 </body>
 </html>
