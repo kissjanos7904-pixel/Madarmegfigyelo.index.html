@@ -21,37 +21,64 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 90px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .header h1 { font-size: 1.2rem; font-weight: 700; }
     .btn-help-top { background: var(--border); color: var(--text); border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+
+    /* Felső figyelmeztető sáv a fel nem töltött adatokhoz */
+    .sync-warning-banner {
+      background: rgba(217, 119, 6, 0.2);
+      border: 1.5px solid #f59e0b;
+      color: #fef3c7;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+    .sync-warning-banner strong { color: #fbbf24; }
+    .btn-banner-sync {
+      background: #f59e0b;
+      color: #0f172a;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-weight: 800;
+      font-size: 0.78rem;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
     
     .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
     .label-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.85rem; font-weight: 600; }
     .btn-q { background: #475569; color: #fff; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 0.75rem; margin-left: 6px; cursor: pointer; }
     
-    .input-with-mic { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
-    .input-with-mic input, .input-with-mic textarea { margin-bottom: 0; flex: 1; }
-    .btn-mic {
-      background: #334155; border: 1px solid #475569; color: #fff; border-radius: 6px;
-      width: 44px; height: 44px; font-size: 1.2rem; display: flex; align-items: center;
-      justify-content: center; cursor: pointer; flex-shrink: 0;
-    }
-    .btn-mic:active { background: var(--primary); }
-
-    input, textarea {
+    input, textarea, select {
       width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 11px;
       color: var(--text); font-size: 0.95rem; outline: none; margin-bottom: 8px;
     }
-    input:focus, textarea:focus { border-color: var(--primary); }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
     .uppercase { text-transform: uppercase; }
 
-    /* Csak listából választható faj mező */
+    /* Fajválasztó sor + Hang gomb */
+    .faj-row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
     .faj-trigger {
-      width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 12px;
+      flex: 1; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 12px;
       color: var(--text); font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between;
-      align-items: center; margin-bottom: 8px; min-height: 44px;
+      align-items: center; min-height: 46px;
     }
     .faj-trigger.placeholder { color: var(--text-muted); }
+    .btn-voice-main {
+      background: var(--primary); border: none; color: #fff; border-radius: 6px;
+      padding: 0 14px; font-size: 0.9rem; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; gap: 5px; cursor: pointer; flex-shrink: 0;
+    }
+    .btn-voice-main:active { opacity: 0.85; }
 
     /* Teljes képernyős ablakok (Modal) */
     .modal-overlay {
@@ -70,14 +97,17 @@
     /* Hangalapú bevitel jóváhagyó ablak */
     .voice-box {
       background: var(--card); border: 2px solid var(--primary); border-radius: 12px;
-      padding: 20px; margin: auto; width: 100%; max-width: 420px; text-align: center;
+      padding: 18px; margin: auto; width: 100%; max-width: 440px;
     }
-    .voice-status { font-size: 0.9rem; color: var(--warn); font-weight: 700; margin-bottom: 12px; }
-    .voice-preview {
-      background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 14px;
-      font-size: 1.15rem; font-weight: 700; min-height: 54px; margin-bottom: 16px; color: #fff;
-      word-break: break-word;
+    .voice-status { font-size: 0.92rem; color: var(--warn); font-weight: 700; margin-bottom: 10px; text-align: center; }
+    .voice-raw-box {
+      background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+      font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; text-align: center;
     }
+    .voice-parsed-card {
+      background: #0f172a; border: 1px solid #475569; border-radius: 8px; padding: 12px; margin-bottom: 14px;
+    }
+    .voice-field-label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
     .voice-actions { display: flex; gap: 8px; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -93,7 +123,7 @@
       position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
       padding: 10px 14px; display: flex; gap: 8px; z-index: 100;
     }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.95rem; cursor: pointer; color: white; text-align: center; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.92rem; cursor: pointer; color: white; text-align: center; }
     .btn-save { background: var(--primary); }
     .btn-sync { background: var(--success); }
     .btn-export { background: var(--border); font-size: 0.8rem; padding: 8px; }
@@ -111,6 +141,14 @@
     <button class="btn-help-top" onclick="alertFullHelp()">📖 Útmutató</button>
   </div>
 
+  <!-- Figyelmeztetés a helyben tárolt, fel nem töltött adatokra -->
+  <div id="syncWarningBanner" class="sync-warning-banner">
+    <div>
+      ⚠️ <strong>Figyelem!</strong> <span id="syncWarningText">Vannak még fel nem töltött megfigyeléseid a telefonon!</span> Internetkapcsolatnál töltsd fel őket a felhőbe!
+    </div>
+    <button type="button" class="btn-banner-sync" onclick="syncCloud()">☁️ Feltöltés</button>
+  </div>
+
   <div class="draft-indicator" id="draftStatus">Piszkozat automatikusan mentve</div>
 
   <div class="card">
@@ -126,10 +164,7 @@
           <span>Terület *</span>
           <button class="btn-q" onclick="alertHelp('Terület')">?</button>
         </div>
-        <div class="input-with-mic">
-          <input type="text" id="entryTerulet" class="uppercase" list="teruletList" placeholder="KÖZSÉG / UTM" oninput="saveDraft()">
-          <button type="button" class="btn-mic" onclick="startVoiceInput('entryTerulet', true)" title="Hangbevitel">🎤</button>
-        </div>
+        <input type="text" id="entryTerulet" class="uppercase" list="teruletList" placeholder="KÖZSÉG / UTM" oninput="saveDraft()">
         <datalist id="teruletList"></datalist>
       </div>
       <div>
@@ -137,20 +172,22 @@
           <span>Körzet</span>
           <button class="btn-q" onclick="alertHelp('Körzet')">?</button>
         </div>
-        <div class="input-with-mic">
-          <input type="text" id="entryKorzet" class="uppercase" placeholder="PL. HALASTÓ" oninput="saveDraft()">
-          <button type="button" class="btn-mic" onclick="startVoiceInput('entryKorzet', true)" title="Hangbevitel">🎤</button>
-        </div>
+        <input type="text" id="entryKorzet" class="uppercase" placeholder="PL. HALASTÓ" oninput="saveDraft()">
       </div>
     </div>
 
     <div class="label-row">
-      <span>Faj kiválasztása (csak listából) *</span>
+      <span>Faj és egyedszám (lista vagy hangbevitel) *</span>
       <button class="btn-q" onclick="alertHelp('Faj')">?</button>
     </div>
-    <div id="fajTrigger" class="faj-trigger placeholder" onclick="openFajModal()">
-      <span id="fajTriggerText">Érintsd meg a faj kiválasztásához...</span>
-      <span>🔍</span>
+    <div class="faj-row">
+      <div id="fajTrigger" class="faj-trigger placeholder" onclick="openFajModal()">
+        <span id="fajTriggerText">Faj kiválasztása...</span>
+        <span>📋</span>
+      </div>
+      <button type="button" class="btn-voice-main" onclick="startFajVoice()" title="Faj és egyedszám diktálása">
+        🎤 Hang
+      </button>
     </div>
 
     <div class="label-row" style="margin-top: 6px;">
@@ -186,10 +223,7 @@
       <span>Megjegyzés</span>
       <button class="btn-q" onclick="alertHelp('Megjegyzés')">?</button>
     </div>
-    <div class="input-with-mic">
-      <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..." oninput="saveDraft()"></textarea>
-      <button type="button" class="btn-mic" onclick="startVoiceInput('txtMegjegyzes', false)" title="Hangbevitel">🎤</button>
-    </div>
+    <textarea id="txtMegjegyzes" rows="2" placeholder="Egyéb információk..." oninput="saveDraft()"></textarea>
   </div>
 
   <div class="card" style="text-align: center;">
@@ -208,35 +242,57 @@
       <div class="modal-title">Faj kiválasztása a listából</div>
       <button class="btn-close" onclick="closeFajModal()">Bezárás ✕</button>
     </div>
-    <div class="input-with-mic">
-      <input type="text" id="fajModalSearch" placeholder="Gépelj vagy diktálj a szűréshez..." oninput="renderModalList()" autocomplete="off">
-      <button type="button" class="btn-mic" onclick="startVoiceInput('fajModalSearch', false, true)" title="Faj diktálása">🎤</button>
-    </div>
+    <input type="text" id="fajModalSearch" placeholder="Gépelj a lista szűréséhez..." oninput="renderModalList()" autocomplete="off">
     <div id="fajModalList" class="faj-modal-list"></div>
   </div>
 
-  <!-- Hangalapú adatbevitel jóváhagyó ablak -->
+  <!-- Hangalapú Faj + Egyedszám jóváhagyó ablak -->
   <div id="voiceModal" class="modal-overlay">
     <div class="voice-box">
-      <div class="voice-status" id="voiceStatus">🎙️ Hallgatlak... Mondd az adatot!</div>
-      <div class="voice-preview" id="voicePreview">...</div>
+      <div class="voice-status" id="voiceStatus">🎙️ Hallgatlak... Mondd a fajt és a számot!</div>
+      <div class="voice-raw-box" id="voiceRawPreview">Példa: „Kanalas réce 12” vagy „Tőkés réce 4 hím”</div>
+
+      <div class="voice-parsed-card">
+        <div class="voice-field-label">Felismert faj (csak a listából):</div>
+        <select id="voiceMatchedFajSelect" style="margin-bottom: 10px;"></select>
+
+        <div class="grid-2">
+          <div>
+            <div class="voice-field-label">Egyedszám:</div>
+            <input type="number" id="voiceMatchedCount" min="1" placeholder="pl. 12" style="margin-bottom: 0;">
+          </div>
+          <div>
+            <div class="voice-field-label">Kategória:</div>
+            <select id="voiceMatchedCategory" style="margin-bottom: 0;">
+              <option value="num_pld">pld.</option>
+              <option value="num_him">Hím</option>
+              <option value="num_tojo">Tojó</option>
+              <option value="num_ad">Ad</option>
+              <option value="num_juv">Juv</option>
+              <option value="num_imm">Imm</option>
+              <option value="num_pull">Pull</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div class="voice-actions">
         <button type="button" class="btn btn-cancel" onclick="cancelVoice()">Mégse</button>
         <button type="button" class="btn btn-retry" onclick="retryVoice()">🔄 Újra</button>
-        <button type="button" class="btn btn-sync" id="btnVoiceConfirm" onclick="confirmVoice()" disabled>✅ Jóváhagyás</button>
+        <button type="button" class="btn btn-sync" id="btnVoiceConfirm" onclick="confirmFajVoice()" disabled>✅ Jóváhagyás</button>
       </div>
     </div>
   </div>
 
   <script>
     const FELHO_API_URL = "https://script.google.com/macros/s/AKfycbwhK0iXy1-KndIFrsWQY5iaaR9yiaXCcuqxkJIg8lIpiwJS9D4prJ10rz1abNnVQQPOMw/exec";
-    const DRAFT_STORAGE_KEY = "madar_app_current_draft_v1";
+    const DRAFT_STORAGE_KEY = "madar_app_current_draft_v2";
 
     const SUGO = {
       "Időpont": "Formátum: ÉÉÉÉ.HH.NN. Alapértelmezett a mai dátum. Kitöltése kötelező!",
       "Terület": "Község, tájegység vagy UTM kód. Csupa nagybetűs. Kitöltése kötelező!",
       "Körzet": "Pontosabb leírás (pl. HALASTÓ). Nem kötelező.",
-      "Faj": "Kizárólag a listából választható megfigyelt faj. Kitöltése kötelező!",
+      "Faj": "Kizárólag a listából választható. A '🎤 Hang' gombbal egyszerre diktálható a faj és az egyedszám (pl. 'kanalas réce 15'), majd jóváhagyás után kerül az adatlapra.",
       "Mennyiségek": "Legalább egy mező kitöltése kötelező! Az Össz automatikusan összeadja őket.",
       "Megfigyelők": "A Megfigyelő 1 kitöltése kötelező.",
       "Megjegyzés": "Egyéb megjegyzések rögzítése."
@@ -318,7 +374,6 @@
 
         document.getElementById('txtMegjegyzes').value = draft.megjegyzes || "";
 
-        // Utolsó nyitott képernyő visszaállítása
         if (draft.fajModalOpen) {
           document.getElementById('fajModal').style.display = 'flex';
           document.getElementById('fajModalSearch').value = draft.fajModalSearch || "";
@@ -337,7 +392,7 @@
       const keepObservers = Array.from(obsInputs).map(inp => inp.value);
 
       kivalasztottFaj = "";
-      document.getElementById('fajTriggerText').innerText = "Érintsd meg a faj kiválasztásához...";
+      document.getElementById('fajTriggerText').innerText = "Faj kiválasztása...";
       document.getElementById('fajTrigger').classList.add('placeholder');
       document.getElementById('entryKorzet').value = '';
       ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull', 'num_ossz'].forEach(id => {
@@ -351,450 +406,94 @@
       saveDraft(false);
     }
 
-    // ================= HANG ALAPÚ ADATBEVITEL VALIDÁCIÓVAL =================
+    // ================= HANG ALAPÚ FAJ + EGYEDSZÁM BEVITEL VALIDÁCIÓVAL =================
     let recognition = null;
-    let voiceTargetId = null;
-    let voiceUppercase = false;
-    let voiceIsFajSearch = false;
-    let voiceRecognizedText = "";
 
-    function startVoiceInput(targetId, uppercase = false, isFajSearch = false) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("Ez a böngésző nem támogatja a hangalapú beszédfelismerést. Használd a telefon billentyűzetének mikrofon gombját!");
-        return;
-      }
+    function populateVoiceFajSelect(selectedFaj = "") {
+      const sel = document.getElementById('voiceMatchedFajSelect');
+      sel.innerHTML = '';
 
-      voiceTargetId = targetId;
-      voiceUppercase = uppercase;
-      voiceIsFajSearch = isFajSearch;
-      voiceRecognizedText = "";
+      const defOpt = document.createElement('option');
+      defOpt.value = "";
+      defOpt.innerText = "-- Válassz a listából --";
+      sel.appendChild(defOpt);
 
-      document.getElementById('voiceModal').style.display = 'flex';
-      document.getElementById('voiceStatus').innerText = "🎙️ Hallgatlak... Beszélj tisztán!";
-      document.getElementById('voiceStatus').style.color = "#eab308";
-      document.getElementById('voicePreview').innerText = "...";
-      document.getElementById('btnVoiceConfirm').disabled = true;
+      FAJOK.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.innerText = f;
+        if (f === selectedFaj) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
 
-      recognition = new SpeechRecognition();
-      recognition.lang = 'hu-HU';
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
+    function parseSpeechFajAndCount(rawText) {
+      let text = rawText.toLowerCase().trim();
 
-      recognition.onresult = (event) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        transcript = transcript.trim();
-        if (voiceUppercase) transcript = transcript.toUpperCase();
-
-        voiceRecognizedText = transcript;
-        document.getElementById('voicePreview').innerText = transcript || "...";
-
-        if (event.results[0].isFinal && transcript.length > 0) {
-          document.getElementById('voiceStatus').innerText = "Ellenőrizd, majd nyomd meg a Jóváhagyást!";
-          document.getElementById('voiceStatus').style.color = "#22c55e";
-          document.getElementById('btnVoiceConfirm').disabled = false;
-        }
+      // Magyar számnevek átalakítása számjegyekké
+      const szamSzavak = {
+        "egy": "1", "kettő": "2", "két": "2", "három": "3", "négy": "4",
+        "öt": "5", "hat": "6", "hét": "7", "nyolc": "8", "kilenc": "9", "tíz": "10",
+        "tizenegy": "11", "tizenkettő": "12", "tizenhárom": "13", "tizennégy": "14",
+        "tizenöt": "15", "húsz": "20", "harminc": "30", "negyven": "40", "ötven": "50", "száz": "100"
       };
+      Object.keys(szamSzavak).forEach(sz => {
+        const regex = new RegExp(`\\b${sz}\\b`, 'gi');
+        text = text.replace(regex, szamSzavak[sz]);
+      });
 
-      recognition.onerror = (event) => {
-        document.getElementById('voiceStatus').innerText = "Hiba történt (" + event.error + "). Próbáld újra!";
-        document.getElementById('voiceStatus').style.color = "#ef4444";
-      };
+      // Szám kinyerése
+      const numMatch = text.match(/(\d+)/);
+      const count = numMatch ? parseInt(numMatch[1], 10) : "";
 
-      recognition.onend = () => {
-        if (voiceRecognizedText.length > 0) {
-          document.getElementById('voiceStatus').innerText = "Ellenőrizd, majd nyomd meg a Jóváhagyást!";
-          document.getElementById('voiceStatus').style.color = "#22c55e";
-          document.getElementById('btnVoiceConfirm').disabled = false;
+      // Kategória felismerése (ha említette)
+      let category = "num_pld";
+      if (/\bhím\b|\bhímek\b/.test(text)) category = "num_him";
+      else if (/\btojó\b|\btojók\b|\bnőstény\b/.test(text)) category = "num_tojo";
+      else if (/\böreg\b|\badult\b|\bad\b/.test(text)) category = "num_ad";
+      else if (/\bfiatal\b|\bjuv\b|\bjuvenilis\b/.test(text)) category = "num_juv";
+      else if (/\bimm\b|\bátszíneződő\b/.test(text)) category = "num_imm";
+      else if (/\bfióka\b|\bpull\b/.test(text)) category = "num_pull";
+
+      // Fajnév tisztítása a számoktól és mértékegységektől
+      let speciesQuery = text
+        .replace(/\d+/g, ' ')
+        .replace(/\b(példány|pld|darab|db|hím|hímek|tojó|tojók|öreg|fiatal|fióka)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Legjobb egyezés keresése a FAJOK listából
+      let bestFaj = "";
+      if (speciesQuery.length > 0) {
+        // 1. Pontos egyezés
+        const exact = FAJOK.find(f => f.toLowerCase() === speciesQuery);
+        if (exact) {
+          bestFaj = exact;
         } else {
-          document.getElementById('voiceStatus').innerText = "Nem sikerült szöveget rögzíteni. Nyomj az Újra gombra!";
+          // 2. Tartalmazza-e a fajnév a kimondott szöveget vagy fordítva
+          const partial = FAJOK.find(f => f.toLowerCase().includes(speciesQuery) || speciesQuery.includes(f.toLowerCase()));
+          if (partial) {
+            bestFaj = partial;
+          } else {
+            // 3. Szóegyezés pontozás
+            const queryWords = speciesQuery.split(' ').filter(w => w.length > 2);
+            let bestScore = 0;
+            FAJOK.forEach(f => {
+              const fLower = f.toLowerCase();
+              let score = 0;
+              queryWords.forEach(qw => {
+                if (fLower.includes(qw)) score++;
+              });
+              if (score > bestScore) {
+                bestScore = score;
+                bestFaj = f;
+              }
+            });
+          }
         }
-      };
-
-      recognition.start();
-    }
-
-    function confirmVoice() {
-      if (!voiceRecognizedText) return;
-      const targetEl = document.getElementById(voiceTargetId);
-      if (targetEl) {
-        targetEl.value = voiceRecognizedText;
-        if (voiceIsFajSearch) {
-          renderModalList();
-        }
-        saveDraft();
-      }
-      closeVoiceModal();
-    }
-
-    function retryVoice() {
-      if (recognition) {
-        try { recognition.abort(); } catch (e) {}
-      }
-      startVoiceInput(voiceTargetId, voiceUppercase, voiceIsFajSearch);
-    }
-
-    function cancelVoice() {
-      if (recognition) {
-        try { recognition.abort(); } catch (e) {}
-      }
-      closeVoiceModal();
-    }
-
-    function closeVoiceModal() {
-      document.getElementById('voiceModal').style.display = 'none';
-    }
-
-    // ================= FAJVÁLASZTÓ (CSAK LISTÁBÓL) =================
-    function openFajModal() {
-      document.getElementById('fajModal').style.display = 'flex';
-      document.getElementById('fajModalSearch').value = '';
-      renderModalList();
-      saveDraft(true);
-    }
-
-    function closeFajModal() {
-      document.getElementById('fajModal').style.display = 'none';
-      saveDraft(false);
-    }
-
-    function renderModalList() {
-      const q = document.getElementById('fajModalSearch').value.toLowerCase().trim();
-      const listEl = document.getElementById('fajModalList');
-      listEl.innerHTML = '';
-
-      const talalatok = q === '' ? FAJOK : FAJOK.filter(f => f.toLowerCase().includes(q));
-
-      if (talalatok.length === 0) {
-        const emptyRow = document.createElement('div');
-        emptyRow.className = 'faj-modal-item';
-        emptyRow.style.color = '#94a3b8';
-        emptyRow.innerText = 'Nincs találat a listában. Válaszd az "Egyéb nem meghatározott" opciót vagy módosítsd a keresést.';
-        listEl.appendChild(emptyRow);
-        return;
       }
 
-      talalatok.forEach(faj => {
-        const row = document.createElement('div');
-        row.className = 'faj-modal-item';
-        row.innerText = faj;
-        row.onclick = () => selectFaj(faj);
-        listEl.appendChild(row);
-      });
-
-      saveDraft(true);
+      return { faj: bestFaj, count, category };
     }
 
-    function selectFaj(faj) {
-      // Csak a FAJOK tömbben szereplő elem fogadható el
-      if (!FAJOK.includes(faj)) {
-        alert("Csak a fajlistából választhatsz fajt!");
-        return;
-      }
-
-      if (faj === "Egyéb nem meghatározott") {
-        const res = prompt("Add meg a faj pontosítását:");
-        kivalasztottFaj = res && res.trim() ? "EGYÉB: " + res.trim().toUpperCase() : "Egyéb nem meghatározott";
-      } else {
-        kivalasztottFaj = faj;
-      }
-
-      const trg = document.getElementById('fajTriggerText');
-      trg.innerText = kivalasztottFaj;
-      document.getElementById('fajTrigger').classList.remove('placeholder');
-      closeFajModal();
-    }
-
-    // ================= MEGFIGYELŐ MEZŐK =================
-    function renderObserverInputs(valuesArray) {
-      const container = document.getElementById('observerContainer');
-      container.innerHTML = '';
-      valuesArray.forEach((val, idx) => {
-        createSingleObserverRow(idx + 1, val);
-      });
-    }
-
-    function createSingleObserverRow(number, initialValue = "") {
-      const container = document.getElementById('observerContainer');
-      const row = document.createElement('div');
-      row.className = 'input-with-mic';
-
-      const inpId = `obs_field_${number}_${Date.now()}`;
-      const inp = document.createElement('input');
-      inp.type = "text";
-      inp.id = inpId;
-      inp.className = "obs-input uppercase";
-      inp.setAttribute("list", "obsList");
-      inp.placeholder = number === 1 ? "MEGFIGYELŐ 1 * (ELSŐDLEGES)" : `MEGFIGYELŐ ${number}`;
-      inp.value = initialValue;
-      inp.oninput = () => saveDraft();
-
-      const micBtn = document.createElement('button');
-      micBtn.type = "button";
-      micBtn.className = "btn-mic";
-      micBtn.innerText = "🎤";
-      micBtn.title = "Megfigyelő diktálása";
-      micBtn.onclick = () => startVoiceInput(inpId, true);
-
-      row.appendChild(inp);
-      row.appendChild(micBtn);
-      container.appendChild(row);
-    }
-
-    function addObserverField() {
-      const container = document.getElementById('observerContainer');
-      const count = container.querySelectorAll('input').length + 1;
-      createSingleObserverRow(count, "");
-      saveDraft();
-    }
-
-    // ================= ADATBÁZIS ÉS SZÁMOLÁS =================
-    let db;
-    const request = indexedDB.open("MadarAppDB", 1);
-    request.onupgradeneeded = (e) => {
-      db = e.target.result;
-      db.createObjectStore("megfigyelesek", { keyPath: "id", autoIncrement: true });
-    };
-    request.onsuccess = (e) => {
-      db = e.target.result;
-      updateStatusBadge();
-      populateDatalists();
-    };
-
-    function getTodayStr() {
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth() + 1).padStart(2, '0');
-      const d = String(today.getDate()).padStart(2, '0');
-      return `${y}.${m}.${d}`;
-    }
-
-    function setTodayDate() {
-      document.getElementById('entryDate').value = getTodayStr();
-    }
-
-    function onNumInput() {
-      calcSum();
-      saveDraft();
-    }
-
-    function calcSum() {
-      const fields = ['num_pld', 'num_him', 'num_tojo', 'num_ad', 'num_juv', 'num_imm', 'num_pull'];
-      let sum = 0;
-      let hasVal = false;
-      fields.forEach(id => {
-        const v = parseInt(document.getElementById(id).value, 10);
-        if (!isNaN(v)) {
-          sum += v;
-          hasVal = true;
-        }
-      });
-      document.getElementById('num_ossz').value = hasVal ? sum : '';
-    }
-
-    function parseVal(id) {
-      const v = parseInt(document.getElementById(id).value, 10);
-      return isNaN(v) ? "" : v;
-    }
-
-    function saveRecord() {
-      const datum = document.getElementById('entryDate').value.trim();
-      const terulet = document.getElementById('entryTerulet').value.trim().toUpperCase();
-      const korzet = document.getElementById('entryKorzet').value.trim().toUpperCase();
-      
-      const obsInputs = document.querySelectorAll('.obs-input');
-      const megfigyelo1 = obsInputs[0] ? obsInputs[0].value.trim().toUpperCase() : "";
-
-      if (!datum || !terulet || !kivalasztottFaj || !megfigyelo1) {
-        alert("Az Időpont, Terület, Faj és Megfigyelő 1 kitöltése kötelező!");
-        return;
-      }
-
-      // Ellenőrzés, hogy a faj ténylegesen a listából származik-e
-      const isFajValid = FAJOK.includes(kivalasztottFaj) || kivalasztottFaj.startsWith("EGYÉB:");
-      if (!isFajValid) {
-        alert("Érvénytelen faj! Kérlek válassz a fajlistából!");
-        return;
-      }
-
-      const pld = parseVal('num_pld');
-      const him = parseVal('num_him');
-      const tojo = parseVal('num_tojo');
-      const ad = parseVal('num_ad');
-      const juv = parseVal('num_juv');
-      const imm = parseVal('num_imm');
-      const pull = parseVal('num_pull');
-      const ossz = parseVal('num_ossz');
-
-      if (pld === "" && him === "" && tojo === "" && ad === "" && juv === "" && imm === "" && pull === "") {
-        alert("A mennyiségi rubrikák közül legalább egyet kötelező kitölteni!");
-        return;
-      }
-
-      const record = {
-        "Időpont": datum,
-        "Terület": terulet,
-        "Körzet": korzet,
-        "Faj": kivalasztottFaj,
-        "pld.": pld,
-        "Hím": him,
-        "Tojó": tojo,
-        "Ad": ad,
-        "Juv": juv,
-        "Imm": imm,
-        "Pull": pull,
-        "Össz": ossz,
-        "Megfigyelő 1": megfigyelo1,
-        "Megjegyzés": document.getElementById('txtMegjegyzes').value.trim(),
-        "Feltoltve": false
-      };
-
-      obsInputs.forEach((inp, idx) => {
-        if (idx > 0) {
-          const val = inp.value.trim().toUpperCase();
-          if (val) record[`Megfigyelő ${idx + 1}`] = val;
-        }
-      });
-
-      const tx = db.transaction("megfigyelesek", "readwrite");
-      tx.objectStore("megfigyelesek").add(record);
-      tx.oncomplete = () => {
-        alert("Adat elmentve! Új üres adatlap megnyitva.");
-        clearDraftForNewForm();
-        updateStatusBadge();
-        populateDatalists();
-      };
-    }
-
-    function updateStatusBadge() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const all = req.result;
-        const unsynced = all.filter(r => !r.Feltoltve).length;
-        document.getElementById('localStatus').innerText = `Helyben mentett: ${all.length} sor (Feltöltendő: ${unsynced})`;
-      };
-    }
-
-    function populateDatalists() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const all = req.result;
-        const teruletek = new Set();
-        const megfigyelok = new Set();
-
-        all.forEach(r => {
-          if (r["Terület"]) teruletek.add(r["Terület"]);
-          Object.keys(r).forEach(k => {
-            if (k.startsWith("Megfigyelő") && r[k]) megfigyelok.add(r[k]);
-          });
-        });
-
-        const dlTer = document.getElementById('teruletList');
-        dlTer.innerHTML = '';
-        teruletek.forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          dlTer.appendChild(opt);
-        });
-
-        const dlObs = document.getElementById('obsList');
-        dlObs.innerHTML = '';
-        megfigyelok.forEach(m => {
-          const opt = document.createElement('option');
-          opt.value = m;
-          dlObs.appendChild(opt);
-        });
-      };
-    }
-
-    async function syncCloud() {
-      if (!navigator.onLine) {
-        alert("Nincs internetkapcsolat!");
-        return;
-      }
-
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-
-      req.onsuccess = async () => {
-        const unsynced = req.result.filter(r => !r.Feltoltve);
-        if (unsynced.length === 0) {
-          alert("Minden adat fel van töltve!");
-          return;
-        }
-
-        try {
-          await fetch(FELHO_API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ uj_megfigyelesek: unsynced })
-          });
-
-          const writeTx = db.transaction("megfigyelesek", "readwrite");
-          const writeStore = writeTx.objectStore("megfigyelesek");
-          unsynced.forEach(rec => {
-            rec.Feltoltve = true;
-            writeStore.put(rec);
-          });
-
-          writeTx.oncomplete = () => {
-            alert(`${unsynced.length} rekord sikeresen elküldve a Google Táblázatba!`);
-            updateStatusBadge();
-          };
-        } catch (err) {
-          alert("Feltöltési hiba: " + err.message);
-        }
-      };
-    }
-
-    function exportToExcel() {
-      const tx = db.transaction("megfigyelesek", "readonly");
-      const store = tx.objectStore("megfigyelesek");
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const data = req.result;
-        if (data.length === 0) {
-          alert("Nincs mentett adat!");
-          return;
-        }
-        const cleanData = data.map(item => {
-          const copy = Object.assign({}, item);
-          delete copy.id;
-          return copy;
-        });
-
-        const ws = XLSX.utils.json_to_sheet(cleanData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Megfigyelesek");
-        XLSX.writeFile(wb, "madarmegfigyelesek_mobil.xlsx");
-      };
-    }
-
-    function alertHelp(key) { alert(SUGO[key] || "Nincs leírás."); }
-    function alertFullHelp() {
-      alert(Object.entries(SUGO).map(([k, v]) => `• ${k.toUpperCase()}:\n${v}`).join("\n\n"));
-    }
-
-    // Biztonsági mentés az oldal elhagyásakor / bezárásakor
-    window.addEventListener('beforeunload', () => saveDraft());
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') saveDraft();
-    });
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-
-    restoreDraft();
-  </script>
-</body>
-</html>
+    function start
